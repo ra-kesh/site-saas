@@ -76,6 +76,10 @@ const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
 
 export default buildConfig({
   admin: {
+    components: {
+      beforeDashboard: ["@/components/BeforeDashboard"],
+      beforeLogin: ["@/components/BeforeLogin"],
+    },
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
