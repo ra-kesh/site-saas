@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import type { Media, Page, Post, Config } from '../payload-types'
+import type { TenantReference } from '@/lib/utils'
 
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { getServerSideURL } from './getURL'
@@ -12,9 +13,18 @@ const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   let url = serverUrl + '/website-template-OG.webp'
 
   if (image && typeof image === 'object' && 'url' in image) {
-    const ogUrl = image.sizes?.og?.url
+    type MediaWithSizes = Media & {
+      sizes?: {
+        og?: {
+          url?: string | null
+        }
+      }
+    }
 
-    url = ogUrl ? serverUrl + ogUrl : serverUrl + image.url
+    const mediaWithSizes = image as MediaWithSizes
+    const ogUrl = mediaWithSizes.sizes?.og?.url ?? undefined
+
+    url = ogUrl ? serverUrl + ogUrl : serverUrl + mediaWithSizes.url
   }
 
   return url
@@ -33,14 +43,18 @@ export const generateMeta = async (args: {
 
   const tenantSlug =
     doc && typeof doc === 'object' && 'tenant' in doc
-      ? extractTenantSlug((doc as Page | Post).tenant as unknown)
+      ? extractTenantSlug(
+          (doc as Page | Post).tenant as TenantReference
+        )
       : undefined
 
+  const rawSlug = doc?.slug as unknown
+
   const slugValue =
-    typeof doc?.slug === 'string'
-      ? doc.slug
-      : Array.isArray(doc?.slug)
-        ? doc.slug.join('/')
+    typeof rawSlug === 'string'
+      ? rawSlug
+      : Array.isArray(rawSlug)
+        ? rawSlug.join('/')
         : undefined
 
   const collection: 'pages' | 'posts' =
