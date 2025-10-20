@@ -7,6 +7,12 @@ import { Media } from '@/components/Media'
 import RichText from '@/components/RichText'
 
 export const MediumImpactHero: React.FC<Page['hero']> = ({ links, media, richText }) => {
+  type CaptionData = React.ComponentProps<typeof RichText>['data']
+  const mediaCaption =
+    media && typeof media === 'object' && 'caption' in media
+      ? (media as { caption?: CaptionData | null }).caption ?? undefined
+      : undefined
+
   return (
     <div className="">
       <div className="container mb-8">
@@ -33,9 +39,9 @@ export const MediumImpactHero: React.FC<Page['hero']> = ({ links, media, richTex
               priority
               resource={media}
             />
-            {media?.caption && (
+            {mediaCaption && (
               <div className="mt-3">
-                <RichText data={media.caption} enableGutter={false} />
+                <RichText data={mediaCaption} enableGutter={false} />
               </div>
             )}
           </div>

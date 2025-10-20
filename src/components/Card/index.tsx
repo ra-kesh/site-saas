@@ -28,8 +28,7 @@ export const Card: React.FC<{
   const hasCategories = categories && Array.isArray(categories) && categories.length > 0
   const titleToUse = titleFromProps || title
   const sanitizedDescription = description?.replace(/\s/g, ' ') // replace non-breaking space with white space
-  const tenantSlug =
-    doc && 'tenant' in doc ? extractTenantSlug((doc as Post).tenant as unknown) : undefined
+  const tenantSlug = doc?.tenant ? extractTenantSlug(doc.tenant) : undefined
 
   const href = generateTenantContentPath({
     collection: relationTo ?? 'posts',

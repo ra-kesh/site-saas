@@ -29,8 +29,12 @@ export const MediaBlock: React.FC<Props> = (props) => {
     disableInnerContainer,
   } = props
 
-  let caption
-  if (media && typeof media === 'object') caption = media.caption
+  type CaptionData = React.ComponentProps<typeof RichText>['data']
+  const mediaWithCaption =
+    media && typeof media === 'object' && 'caption' in media
+      ? (media as Exclude<Props['media'], string> & { caption?: CaptionData | null })
+      : undefined
+  const caption = mediaWithCaption?.caption ?? undefined
 
   return (
     <div

@@ -30,10 +30,7 @@ export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }
       const id = redirectItem.to.reference.value
 
       const document = (await getCachedDocument(relationTo, id)()) as Page | Post
-      const tenantSlug =
-        document && typeof document === 'object' && 'tenant' in document
-          ? extractTenantSlug(document.tenant as unknown)
-          : undefined
+      const tenantSlug = document?.tenant ? extractTenantSlug(document.tenant ?? undefined) : undefined
 
       const slug = typeof document?.slug === 'string' ? document.slug : undefined
 
@@ -47,10 +44,7 @@ export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }
       redirectItem.to.reference?.value
     ) {
       const doc = redirectItem.to.reference.value as Page | Post
-      const tenantSlug =
-        doc && typeof doc === 'object' && 'tenant' in doc
-          ? extractTenantSlug(doc.tenant as unknown)
-          : undefined
+      const tenantSlug = doc?.tenant ? extractTenantSlug(doc.tenant ?? undefined) : undefined
       const slug = typeof doc.slug === 'string' ? doc.slug : undefined
 
       redirectUrl = generateTenantContentPath({

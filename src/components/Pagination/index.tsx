@@ -26,16 +26,23 @@ export const Pagination: React.FC<{
   const hasExtraPrevPages = page - 1 > 1
   const hasExtraNextPages = page + 1 < totalPages
 
+  const createNavigateHandler =
+    (targetPage: number, isEnabled: boolean) =>
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault()
+      if (!isEnabled) return
+      router.push(`/posts/page/${targetPage}`)
+    }
+
   return (
     <div className={cn('my-12', className)}>
       <PaginationComponent>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
-              disabled={!hasPrevPage}
-              onClick={() => {
-                router.push(`/posts/page/${page - 1}`)
-              }}
+              aria-disabled={!hasPrevPage}
+              tabIndex={hasPrevPage ? undefined : -1}
+              onClick={createNavigateHandler(page - 1, hasPrevPage)}
             />
           </PaginationItem>
 
@@ -88,10 +95,9 @@ export const Pagination: React.FC<{
 
           <PaginationItem>
             <PaginationNext
-              disabled={!hasNextPage}
-              onClick={() => {
-                router.push(`/posts/page/${page + 1}`)
-              }}
+              aria-disabled={!hasNextPage}
+              tabIndex={hasNextPage ? undefined : -1}
+              onClick={createNavigateHandler(page + 1, hasNextPage)}
             />
           </PaginationItem>
         </PaginationContent>
