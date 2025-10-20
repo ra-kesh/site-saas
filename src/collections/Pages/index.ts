@@ -12,6 +12,7 @@ import { slugField } from 'payload'
 import { populatePublishedAt } from '../../hooks/populatePublishedAt'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
 import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
+import type { TenantReference } from '@/lib/utils'
 
 import {
   MetaDescriptionField,
@@ -44,7 +45,7 @@ export const Pages: CollectionConfig<'pages'> = {
         generatePreviewPath({
           slug: data?.slug,
           collection: 'pages',
-          tenant: data?.tenant,
+          tenant: data?.tenant as TenantReference,
           req,
         }),
     },
@@ -52,7 +53,7 @@ export const Pages: CollectionConfig<'pages'> = {
       generatePreviewPath({
         slug: data?.slug as string,
         collection: 'pages',
-        tenant: data?.tenant,
+        tenant: data?.tenant as TenantReference,
         req,
       }),
     useAsTitle: 'title',

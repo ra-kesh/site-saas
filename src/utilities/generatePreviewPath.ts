@@ -1,12 +1,18 @@
-import { PayloadRequest, CollectionSlug } from 'payload'
+import { PayloadRequest } from 'payload'
 
-import { extractTenantSlug, generateTenantContentPath } from '@/lib/utils'
+import {
+  extractTenantSlug,
+  generateTenantContentPath,
+  type TenantReference,
+} from '@/lib/utils'
+
+type SupportedCollection = 'pages' | 'posts'
 
 type Props = {
-  collection: CollectionSlug
+  collection: SupportedCollection
   req: PayloadRequest
   slug: string
-  tenant?: unknown
+  tenant?: TenantReference
 }
 
 export const generatePreviewPath = ({ collection, slug, tenant }: Props) => {
@@ -18,7 +24,7 @@ export const generatePreviewPath = ({ collection, slug, tenant }: Props) => {
   // Encode to support slugs with special characters
   const encodedSlug = encodeURIComponent(slug)
   const decodedSlug = decodeURIComponent(encodedSlug)
-  const tenantSlug = extractTenantSlug(tenant as unknown)
+  const tenantSlug = extractTenantSlug(tenant)
 
   const path = generateTenantContentPath({
     collection,

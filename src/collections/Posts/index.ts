@@ -17,6 +17,7 @@ import { MediaBlock } from '../../blocks/MediaBlock/config'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
 import { populateAuthors } from './hooks/populateAuthors'
 import { revalidateDelete, revalidatePost } from './hooks/revalidatePost'
+import type { TenantReference } from '@/lib/utils'
 
 import {
   MetaDescriptionField,
@@ -55,7 +56,7 @@ export const Posts: CollectionConfig<'posts'> = {
         generatePreviewPath({
           slug: data?.slug,
           collection: 'posts',
-          tenant: data?.tenant,
+          tenant: data?.tenant as TenantReference,
           req,
         }),
     },
@@ -63,7 +64,7 @@ export const Posts: CollectionConfig<'posts'> = {
       generatePreviewPath({
         slug: data?.slug as string,
         collection: 'posts',
-        tenant: data?.tenant,
+        tenant: data?.tenant as TenantReference,
         req,
       }),
     useAsTitle: 'title',

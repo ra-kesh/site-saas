@@ -21,7 +21,7 @@ import type {
 import { BannerBlock } from '@/blocks/Banner/Component'
 import { CallToActionBlock } from '@/blocks/CallToAction/Component'
 import { cn } from '@/utilities/ui'
-import { extractTenantSlug, generateTenantContentPath } from '@/lib/utils'
+import { extractTenantSlug, generateTenantContentPath, type TenantReference } from '@/lib/utils'
 
 type NodeTypes =
   | DefaultNodeTypes
@@ -29,10 +29,13 @@ type NodeTypes =
 
 const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
   const { value, relationTo } = linkNode.fields.doc!
-  if (typeof value !== 'object') {
+  if (typeof value !== 'object' || value === null) {
     throw new Error('Expected value to be an object')
   }
-  const tenantSlug = 'tenant' in value ? extractTenantSlug(value.tenant as unknown) : undefined
+  const tenantSlug =
+    'tenant' in value
+      ? extractTenantSlug((value as { tenant?: TenantReference }).tenant)
+      : undefined
   const slug = typeof value.slug === 'string' ? value.slug : undefined
 
   return generateTenantContentPath({
