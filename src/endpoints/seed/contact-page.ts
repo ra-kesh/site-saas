@@ -10,11 +10,13 @@ import {
 type ContactPageArgs = {
   contactFormId: string
   tenantId: string
+  tenantName: string
 }
 
 export const contactPage = ({
   contactFormId,
   tenantId,
+  tenantName,
 }: ContactPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => ({
   tenant: tenantId,
   title: 'Contact',
@@ -23,7 +25,7 @@ export const contactPage = ({
   hero: {
     type: 'lowImpact',
     richText: createRichText([
-      createHeadingNode('h1', [createTextNode('Tell us about your next launch')]),
+      createHeadingNode('h1', [createTextNode(`Tell ${tenantName} about your next launch`)]),
       createParagraphNode([
         createTextNode(
           'Fill out the brief form below and we will schedule a kickoff call to align on goals, scope, and timelines.',
@@ -46,9 +48,7 @@ export const contactPage = ({
     },
   ],
   meta: {
-    title: 'Contact Demo Creative',
-    description:
-      'Start a project with Demo Creative. We specialize in multi-tenant marketing sites and conversion-focused experiences.',
+    title: `Contact ${tenantName}`,
+    description: `Start a project with ${tenantName}. We specialize in multi-tenant marketing sites and conversion-focused experiences.`,
   },
 })
-

@@ -1,4 +1,4 @@
-import { PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload'
 
 import {
   extractTenantSlug,
@@ -15,7 +15,48 @@ type Props = {
   tenant?: TenantReference
 }
 
-export const generatePreviewPath = ({ collection, slug, tenant }: Props) => {
+const resolveTenantSlug = async ({
+  req,
+  tenant,
+}: {
+  req: PayloadRequest | undefined
+  tenant?: TenantReference
+}) => {
+  if (!tenant) {
+    return undefined
+  }
+
+  const directSlug = extractTenantSlug(tenant)
+  if (directSlug) {
+    return directSlug
+  }
+
+  if (typeof tenant === 'string' && req?.payload) {
+    try {
+      const tenantDoc = await req.payload.findByID({
+        collection: 'tenants',
+        depth: 0,
+        id: tenant,
+      })
+
+      if (tenantDoc && typeof tenantDoc.slug === 'string') {
+        return tenantDoc.slug
+      }
+    } catch (error) {
+      req.payload.logger.warn(
+        {
+          err: error,
+          tenant,
+        },
+        'Failed to resolve tenant slug for preview path',
+      )
+    }
+  }
+
+  return undefined
+}
+
+export const generatePreviewPath = async ({ collection, slug, tenant, req }: Props) => {
   // Allow empty strings, e.g. for the homepage
   if (slug === undefined || slug === null) {
     return null
@@ -24,7 +65,7 @@ export const generatePreviewPath = ({ collection, slug, tenant }: Props) => {
   // Encode to support slugs with special characters
   const encodedSlug = encodeURIComponent(slug)
   const decodedSlug = decodeURIComponent(encodedSlug)
-  const tenantSlug = extractTenantSlug(tenant)
+  const tenantSlug = await resolveTenantSlug({ req, tenant })
 
   const path = generateTenantContentPath({
     collection,

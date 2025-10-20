@@ -122,7 +122,7 @@ export default async function TenantPage({ params }: { params: PageParams }) {
   return (
     <>
       <Navbar slug={tenantDoc.slug} />
-      <article className="pt-16 pb-24">
+      <article className="pt-16 pb-24  max-w-(--breakpoint-xl) mx-auto  h-full px-4 lg:px-12">
         <PageClient />
         <PayloadRedirects disableNotFound url={urlPath} />
         {draft && <LivePreviewListener />}

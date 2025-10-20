@@ -14,6 +14,7 @@ type HomePageArgs = {
   featuredPostUrl: string
   tenantId: string
   tenantSlug: string
+  tenantName: string
 }
 
 export const home = ({
@@ -22,27 +23,28 @@ export const home = ({
   featuredPostUrl,
   tenantId,
   tenantSlug,
+  tenantName,
 }: HomePageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => ({
   tenant: tenantId,
-  title: 'Demo Creative',
+  title: 'Home',
   slug: 'home',
   _status: 'published',
   hero: {
     type: 'lowImpact',
     richText: createRichText([
-      createHeadingNode('h1', [createTextNode('Multi-tenant sites built to convert')]),
+      createHeadingNode('h1', [createTextNode(`Welcome to ${tenantName}`)]),
       createParagraphNode([
         createTextNode(
-          'Demo Creative helps SaaS teams launch fast, experiment often, and scale confidently with Payload-powered marketing infrastructure.',
+          `${tenantName} publishes tenant-specific marketing pages with reusable blocks, live preview, and form integrations powered by Payload.`,
         ),
       ]),
       createParagraphNode([
-        createTextNode('This demo tenant lives at '),
+        createTextNode('Explore your site at '),
         createCustomLinkNode([createTextNode(`/tenants/${tenantSlug}`)], {
           newTab: false,
           url: `/tenants/${tenantSlug}`,
         }),
-        createTextNode(' — explore the seeded content to see every block in action.'),
+        createTextNode(' to see every seeded component in action.'),
       ]),
     ]),
     links: [
@@ -77,7 +79,7 @@ export const home = ({
             createHeadingNode('h2', [createTextNode('Everything editors expect')]),
             createParagraphNode([
               createTextNode(
-                'Reusable blocks, previews, scheduled publishing, and full tenant isolation are ready to go out of the box.',
+                'Reusable blocks, previews, scheduled publishing, and tenant isolation are ready to go out of the box.',
               ),
             ]),
           ]),
@@ -127,7 +129,7 @@ export const home = ({
         createHeadingNode('h2', [createTextNode('Latest launch notes')]),
         createParagraphNode([
           createTextNode(
-            'A running feed of improvements and customer stories from the Demo Creative tenant.',
+            `A running feed of improvements and customer stories from ${tenantName}.`,
           ),
         ]),
       ]),
@@ -137,9 +139,8 @@ export const home = ({
     },
   ],
   meta: {
-    title: 'Demo Creative — tenant-aware marketing starter',
+    title: `${tenantName} — tenant-aware marketing starter`,
     description:
       'Explore a multi-tenant Payload + Next.js starter with pages, posts, forms, redirects, and preview-ready blocks.',
   },
 })
-

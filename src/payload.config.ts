@@ -77,7 +77,6 @@ const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
 export default buildConfig({
   admin: {
     components: {
-      beforeDashboard: ["@/components/BeforeDashboard"],
       beforeLogin: ["@/components/BeforeLogin"],
     },
     user: Users.slug,
@@ -88,6 +87,10 @@ export default buildConfig({
   collections: [Users, Media, Tenants, Pages, Posts, Categories],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
+  serverURL:
+    process.env.NEXT_PUBLIC_SERVER_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "http://localhost:3000",
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },

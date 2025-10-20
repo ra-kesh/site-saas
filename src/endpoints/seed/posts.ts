@@ -15,26 +15,30 @@ type SeedCategory = {
 type PostSeedArgs = {
   categories: SeedCategory[]
   tenantId: string
+  tenantName: string
+  tenantSlug: string
 }
 
 export const createPostSeeds = ({
   categories,
   tenantId,
+  tenantName,
+  tenantSlug,
 }: PostSeedArgs): Array<RequiredDataFromCollectionSlug<'posts'> & { tenant: string }> => {
   const [firstCategory, secondCategory = firstCategory] = categories
 
   return [
     {
       tenant: tenantId,
-      title: 'Launching the Demo Creative tenant experience',
-      slug: 'launching-demo-creative',
+      title: `Launching the ${tenantName} tenant experience`,
+      slug: `launching-${tenantSlug}`,
       _status: 'published',
       categories: firstCategory ? [firstCategory.id] : [],
       content: createRichText([
         createHeadingNode('h2', [createTextNode('Why Payload for multi-tenant marketing?')]),
         createParagraphNode([
           createTextNode(
-            'We built Demo Creative to showcase how Payload keeps tenant content, redirects, and forms isolated while sharing a single codebase. The seed data mirrors the production setup we deploy for client work.',
+            `${tenantName} runs on Payload so tenant content, redirects, and forms stay isolated while sharing a single codebase. The seed data mirrors the production setup we deploy for client work.`,
           ),
         ]),
         createHeadingNode('h3', [createTextNode('What ships with the starter?')]),
@@ -45,15 +49,15 @@ export const createPostSeeds = ({
         ]),
       ]),
       meta: {
-        title: 'Launching the Demo Creative tenant experience',
+        title: `Launching the ${tenantName} tenant experience`,
         description:
           'A walkthrough of the seeded Payload + Next.js starter powering tenant marketing sites.',
       },
     },
     {
       tenant: tenantId,
-      title: 'Designing editorial workflows for every tenant',
-      slug: 'designing-tenant-workflows',
+      title: `Designing editorial workflows for ${tenantName}`,
+      slug: `designing-tenant-workflows-${tenantSlug}`,
       _status: 'published',
       categories: secondCategory ? [secondCategory.id] : [],
       content: createRichText([
@@ -71,11 +75,10 @@ export const createPostSeeds = ({
         ]),
       ]),
       meta: {
-        title: 'Designing editorial workflows for every tenant',
+        title: `Designing editorial workflows for ${tenantName}`,
         description:
-          'How Demo Creative configures Payload blocks and access control to keep teams shipping quickly.',
+          'How this starter configures Payload blocks and access control to keep teams shipping quickly.',
       },
     },
   ]
 }
-

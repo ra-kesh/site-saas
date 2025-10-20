@@ -1,4 +1,4 @@
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload } from 'payload'
 
 import type { Post } from '@/payload-types'
 
@@ -9,9 +9,6 @@ import { postsListingPage } from './posts-page'
 import { createPostSeeds } from './posts'
 import { generateTenantContentPath } from '@/lib/utils'
 
-const TENANT_SLUG = 'demo-creative'
-const TENANT_NAME = 'Demo Creative'
-
 const categoryNames = ['Product updates', 'Customer spotlights']
 
 const toSlug = (input: string) =>
@@ -21,44 +18,47 @@ const toSlug = (input: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-export const seed = async ({
-  payload,
-}: {
+type SeedTenantArgs = {
   payload: Payload
-  req: PayloadRequest
-}) => {
-  payload.logger.info('Seeding multi-tenant starter content…')
+  tenant: {
+    id: string
+    slug: string
+    name: string
+  }
+  ownerEmail?: string | null
+}
 
-  const existingTenant = await payload.find({
-    collection: 'tenants',
+export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs) => {
+  const { id: tenantId, slug: tenantSlug, name: tenantName } = tenant
+
+  payload.logger.info(`Seeding starter content for tenant "${tenantSlug}"…`)
+
+  const existingHome = await payload.find({
+    collection: 'pages',
     limit: 1,
     pagination: false,
     where: {
-      slug: {
-        equals: TENANT_SLUG,
-      },
+      and: [
+        {
+          slug: {
+            equals: 'home',
+          },
+        },
+        {
+          tenant: {
+            equals: tenantId,
+          },
+        },
+      ],
     },
   })
 
-  if (existingTenant.totalDocs > 0) {
+  if (existingHome.totalDocs > 0) {
     payload.logger.info(
-      `Seed skipped — a tenant with slug "${TENANT_SLUG}" already exists. Delete it if you want to reseed.`,
+      `Seed skipped — tenant "${tenantSlug}" already has a home page. Delete existing content to reseed.`,
     )
     return
   }
-
-  const tenant = await payload.create({
-    collection: 'tenants',
-    context: {
-      disableRevalidate: true,
-    },
-    data: {
-      name: TENANT_NAME,
-      slug: TENANT_SLUG,
-    },
-  })
-
-  payload.logger.info('— Created demo tenant')
 
   const categories = await Promise.all(
     categoryNames.map((title) =>
@@ -68,9 +68,9 @@ export const seed = async ({
           disableRevalidate: true,
         },
         data: {
-          tenant: tenant.id,
+          tenant: tenantId,
           title,
-          slug: toSlug(title),
+          slug: `${toSlug(title)}-${tenantSlug}`,
         },
       }),
     ),
@@ -83,14 +83,21 @@ export const seed = async ({
     context: {
       disableRevalidate: true,
     },
-    data: contactForm({ tenantId: tenant.id }),
+    data: contactForm({
+      tenantId,
+      tenantName,
+      tenantSlug,
+      notificationEmail: ownerEmail ?? undefined,
+    }),
   })
 
   payload.logger.info('— Added contact form')
 
   const postSeeds = createPostSeeds({
     categories: categories.map(({ id, title }) => ({ id, title })),
-    tenantId: tenant.id,
+    tenantId,
+    tenantName,
+    tenantSlug,
   })
 
   const posts: Post[] = []
@@ -139,14 +146,15 @@ export const seed = async ({
 
   payload.logger.info(`— Created ${posts.length} posts`)
 
-  const contact = await payload.create({
+  await payload.create({
     collection: 'pages',
     context: {
       disableRevalidate: true,
     },
     data: contactPage({
       contactFormId: form.id,
-      tenantId: tenant.id,
+      tenantId,
+      tenantName,
     }),
   })
 
@@ -161,7 +169,8 @@ export const seed = async ({
     },
     data: postsListingPage({
       categories: categoryIds,
-      tenantId: tenant.id,
+      tenantId,
+      tenantName,
     }),
   })
 
@@ -172,9 +181,9 @@ export const seed = async ({
     ? generateTenantContentPath({
         collection: 'posts',
         slug: featuredPost.slug,
-        tenantSlug: TENANT_SLUG,
+        tenantSlug,
       })
-    : `/tenants/${TENANT_SLUG}`
+    : `/tenants/${tenantSlug}`
 
   await payload.create({
     collection: 'pages',
@@ -183,13 +192,17 @@ export const seed = async ({
     },
     data: home({
       categories: categoryIds,
-      contactUrl: `/tenants/${TENANT_SLUG}/contact`,
+      contactUrl: `/tenants/${tenantSlug}/contact`,
       featuredPostUrl,
-      tenantId: tenant.id,
-      tenantSlug: TENANT_SLUG,
+      tenantId,
+      tenantSlug,
+      tenantName,
     }),
   })
 
   payload.logger.info('— Published home page')
-  payload.logger.info('Seeded database successfully!')
+  payload.logger.info(`Seeded database successfully for tenant "${tenantSlug}".`)
 }
+
+// Backwards compatibility for existing imports
+export const seed = seedTenant

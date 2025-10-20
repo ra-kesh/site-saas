@@ -10,11 +10,13 @@ import {
 type PostsListingPageArgs = {
   categories: string[]
   tenantId: string
+  tenantName: string
 }
 
 export const postsListingPage = ({
   categories,
   tenantId,
+  tenantName,
 }: PostsListingPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => ({
   tenant: tenantId,
   title: 'Latest posts',
@@ -26,7 +28,7 @@ export const postsListingPage = ({
       createHeadingNode('h1', [createTextNode('Latest posts')]),
       createParagraphNode([
         createTextNode(
-          'Stories from the Demo Creative team — product launches, workflow tips, and customer spotlights for multi-tenant sites.',
+          `Stories from the ${tenantName} team — product launches, workflow tips, and customer spotlights for multi-tenant sites.`,
         ),
       ]),
     ]),
@@ -49,8 +51,7 @@ export const postsListingPage = ({
     },
   ],
   meta: {
-    title: 'Demo Creative posts',
+    title: `${tenantName} posts`,
     description: 'A running list of tenant launch notes and product updates.',
   },
 })
-
