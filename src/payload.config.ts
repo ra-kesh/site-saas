@@ -8,6 +8,9 @@ import sharp from "sharp";
 
 import { Users } from "./collections/Users";
 import { Media } from "./collections/Media";
+import { Tenants } from "./collections/Tenants";
+import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
+import { isSuperAdmin } from "./lib/access";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -19,7 +22,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Media, Tenants],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
@@ -31,6 +34,16 @@ export default buildConfig({
   sharp,
   plugins: [
     // payloadCloudPlugin(),
+    multiTenantPlugin({
+      collections: {
+        // products: {},
+        media: {},
+      },
+      tenantsArrayField: {
+        includeDefaultField: false,
+      },
+      userHasAccessToAllTenants: (user) => isSuperAdmin(user),
+    }),
     // storage-adapter-placeholder
   ],
 });

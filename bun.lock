@@ -7,6 +7,7 @@
         "@hookform/resolvers": "^5.2.2",
         "@payloadcms/db-mongodb": "^3.60.0",
         "@payloadcms/next": "^3.60.0",
+        "@payloadcms/plugin-multi-tenant": "^3.60.0",
         "@payloadcms/richtext-lexical": "^3.60.0",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -49,6 +50,7 @@
         "lucide-react": "^0.546.0",
         "next": "15.5.6",
         "next-themes": "^0.4.6",
+        "nuqs": "^2.7.2",
         "payload": "^3.60.0",
         "react": "19.1.0",
         "react-day-picker": "^9.11.1",
@@ -386,6 +388,8 @@
 
     "@payloadcms/next": ["@payloadcms/next@3.60.0", "", { "dependencies": { "@dnd-kit/core": "6.0.8", "@payloadcms/graphql": "3.60.0", "@payloadcms/translations": "3.60.0", "@payloadcms/ui": "3.60.0", "busboy": "^1.6.0", "dequal": "2.0.3", "file-type": "19.3.0", "graphql-http": "^1.22.0", "graphql-playground-html": "1.6.30", "http-status": "2.1.0", "path-to-regexp": "6.3.0", "qs-esm": "7.0.2", "sass": "1.77.4", "uuid": "10.0.0" }, "peerDependencies": { "graphql": "^16.8.1", "next": "^15.2.3", "payload": "3.60.0" } }, "sha512-nAYThy2vNeqfdYZtiyMDHhU1znti23FRGXcO/NHdJjAW02CS35RS/XWPd93ZaIQbhfLt/Tus1SowWyu13I8w8Q=="],
 
+    "@payloadcms/plugin-multi-tenant": ["@payloadcms/plugin-multi-tenant@3.60.0", "", { "peerDependencies": { "@payloadcms/ui": "3.60.0", "next": "^15.2.3", "payload": "3.60.0" } }, "sha512-EpXBJWG6he29faaXy64VfkKtyb4sFPX53j7hEAG9TCSC75tJG8cho7u2bUjKrsXj3Vql3NXsHhVyPjJER8g9mQ=="],
+
     "@payloadcms/richtext-lexical": ["@payloadcms/richtext-lexical@3.60.0", "", { "dependencies": { "@lexical/clipboard": "0.35.0", "@lexical/headless": "0.35.0", "@lexical/html": "0.35.0", "@lexical/link": "0.35.0", "@lexical/list": "0.35.0", "@lexical/mark": "0.35.0", "@lexical/react": "0.35.0", "@lexical/rich-text": "0.35.0", "@lexical/selection": "0.35.0", "@lexical/table": "0.35.0", "@lexical/utils": "0.35.0", "@payloadcms/translations": "3.60.0", "@payloadcms/ui": "3.60.0", "@types/uuid": "10.0.0", "acorn": "8.12.1", "bson-objectid": "2.0.4", "csstype": "3.1.3", "dequal": "2.0.3", "escape-html": "1.0.3", "jsox": "1.2.121", "lexical": "0.35.0", "mdast-util-from-markdown": "2.0.2", "mdast-util-mdx-jsx": "3.1.3", "micromark-extension-mdx-jsx": "3.0.1", "qs-esm": "7.0.2", "react-error-boundary": "4.1.2", "ts-essentials": "10.0.3", "uuid": "10.0.0" }, "peerDependencies": { "@faceless-ui/modal": "3.0.0", "@faceless-ui/scroll-info": "2.0.0", "@payloadcms/next": "3.60.0", "payload": "3.60.0", "react": "^19.0.0 || ^19.0.0-rc-65a56d0e-20241020", "react-dom": "^19.0.0 || ^19.0.0-rc-65a56d0e-20241020" } }, "sha512-KmEEB0lhC7W1X+lD0jdNMrrY8LkXZOsajbMfImqKaYcJ9t++Z7rxaorWD3KXRWKGSp2nZ8IX97w9wzn9yP1VSg=="],
 
     "@payloadcms/translations": ["@payloadcms/translations@3.60.0", "", { "dependencies": { "date-fns": "4.1.0" } }, "sha512-fuc/FwLOoPNWGcDuOWQ+blCDRDMCDb9/ZMoa447VVUhqmTIL0CXh0SIKdbMuhpyvq5nevQ6fxUOlV/pUj0A32A=="],
@@ -503,6 +507,8 @@
     "@rtsao/scc": ["@rtsao/scc@1.1.0", "", {}, "sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g=="],
 
     "@rushstack/eslint-patch": ["@rushstack/eslint-patch@1.14.0", "", {}, "sha512-WJFej426qe4RWOm9MMtP4V3CV4AucXolQty+GRgAWLgQXmpCuwzs7hEpxxhSc/znXUSxum9d/P/32MW0FlAAlA=="],
+
+    "@standard-schema/spec": ["@standard-schema/spec@1.0.0", "", {}, "sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA=="],
 
     "@standard-schema/utils": ["@standard-schema/utils@0.3.0", "", {}, "sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g=="],
 
@@ -1323,6 +1329,8 @@
     "next-themes": ["next-themes@0.4.6", "", { "peerDependencies": { "react": "^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc", "react-dom": "^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc" } }, "sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA=="],
 
     "normalize-path": ["normalize-path@3.0.0", "", {}, "sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA=="],
+
+    "nuqs": ["nuqs@2.7.2", "", { "dependencies": { "@standard-schema/spec": "1.0.0" }, "peerDependencies": { "@remix-run/react": ">=2", "@tanstack/react-router": "^1", "next": ">=14.2.0", "react": ">=18.2.0 || ^19.0.0-0", "react-router": "^6 || ^7", "react-router-dom": "^6 || ^7" }, "optionalPeers": ["@remix-run/react", "@tanstack/react-router", "next", "react-router", "react-router-dom"] }, "sha512-wOPJoz5om7jMJQick9zU1S/Q+joL+B2DZTZxfCleHEcUzjUnPoujGod4+nAmUWb+G9TwZnyv+mfNqlyfEi8Zag=="],
 
     "object-assign": ["object-assign@4.1.1", "", {}, "sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg=="],
 
