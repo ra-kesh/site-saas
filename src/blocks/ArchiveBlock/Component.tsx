@@ -1,7 +1,7 @@
 import type { Post, ArchiveBlock as ArchiveBlockProps, Tenant } from '@/payload-types'
 
 import configPromise from '@payload-config'
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 import React from 'react'
 import RichText from '@/components/RichText'
 
@@ -19,7 +19,7 @@ export const ArchiveBlock: React.FC<
   const limit = limitFromProps || 3
 
   let posts: Post[] = []
-  const tenantId = extractTenantId(tenant as unknown)
+  const tenantId = extractTenantId(tenant)
 
   if (populateBy === 'collection') {
     const payload = await getPayload({ config: configPromise })
@@ -29,19 +29,22 @@ export const ArchiveBlock: React.FC<
       else return category
     })
 
-    const where: Record<string, unknown> = {}
-
-    if (flattenedCategories && flattenedCategories.length > 0) {
-      where.categories = {
-        in: flattenedCategories,
-      }
-    }
-
-    if (tenantId) {
-      where.tenant = {
-        equals: tenantId,
-      }
-    }
+    const where = {
+      ...(flattenedCategories && flattenedCategories.length > 0
+        ? {
+            categories: {
+              in: flattenedCategories,
+            },
+          }
+        : {}),
+      ...(tenantId
+        ? {
+            tenant: {
+              equals: tenantId,
+            },
+          }
+        : {}),
+    } satisfies Where
 
     const fetchedPosts = await payload.find({
       collection: 'posts',
@@ -61,7 +64,7 @@ export const ArchiveBlock: React.FC<
         .filter((post): post is Post => {
           if (!post) return false
           if (!tenantId) return true
-          const postTenantId = extractTenantId('tenant' in post ? (post.tenant as unknown) : undefined)
+          const postTenantId = extractTenantId(post.tenant)
           return !postTenantId || postTenantId === tenantId
         })
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
-import { getPayload, type RequiredDataFromCollectionSlug } from "payload";
+import { getPayload } from "payload";
 
 import configPromise from "@payload-config";
 
@@ -15,14 +15,15 @@ import { RenderBlocks } from "@/blocks/RenderBlocks";
 import { RenderHero } from "@/heros/RenderHero";
 import { generateMeta } from "@/utilities/generateMeta";
 import { homeStatic } from "@/endpoints/seed/home-static";
+import type { Page, Tenant } from "@/payload-types";
 
 type PageParams = Promise<{
   tenantSlug: string;
   page?: string[];
 }>;
 
-type TenantDoc = RequiredDataFromCollectionSlug<"tenants">;
-type PageDoc = RequiredDataFromCollectionSlug<"pages">;
+type TenantDoc = Tenant;
+type PageDoc = Page;
 
 export const dynamic = "force-dynamic";
 
@@ -88,10 +89,10 @@ export default async function TenantPage({ params }: { params: PageParams }) {
   const { tenantSlug, page: pageSegments } = await params;
 
   const tenant = await queryTenant(decodeURIComponent(tenantSlug));
-
   if (!tenant) {
     notFound();
   }
+  const tenantDoc = tenant;
 
   const slug = decodeURIComponent(getSlugFromParams(pageSegments));
   const urlPath =
@@ -102,13 +103,13 @@ export default async function TenantPage({ params }: { params: PageParams }) {
   let page = await queryPage({
     draft,
     slug,
-    tenantId: tenant.id,
+    tenantId: tenantDoc.id,
   });
 
   if (!page && slug === "home") {
     page = {
       ...homeStatic,
-      tenant,
+      tenant: tenantDoc,
     } as PageDoc;
   }
 
@@ -120,13 +121,13 @@ export default async function TenantPage({ params }: { params: PageParams }) {
 
   return (
     <>
-      <Navbar slug={tenant.slug} />
+      <Navbar slug={tenantDoc.slug} />
       <article className="pt-16 pb-24">
         <PageClient />
         <PayloadRedirects disableNotFound url={urlPath} />
         {draft && <LivePreviewListener />}
         <RenderHero {...hero} />
-        <RenderBlocks blocks={layout} tenant={tenant} />
+        <RenderBlocks blocks={layout} tenant={tenantDoc} />
       </article>
       <Footer />
     </>
@@ -143,20 +144,21 @@ export async function generateMetadata({
   const tenant = await queryTenant(decodeURIComponent(tenantSlug));
 
   if (!tenant) {
-    return {};
+    notFound();
   }
+  const tenantDoc = tenant;
 
   const slug = decodeURIComponent(getSlugFromParams(pageSegments));
   let page = await queryPage({
     draft,
     slug,
-    tenantId: tenant.id,
+    tenantId: tenantDoc.id,
   });
 
   if (!page && slug === "home") {
     page = {
       ...homeStatic,
-      tenant,
+      tenant: tenantDoc,
     } as PageDoc;
   }
 

@@ -1,6 +1,7 @@
 import React, { Fragment } from "react";
 
 import type { Page, Tenant } from "@/payload-types";
+import type { TenantReference } from "@/lib/utils";
 
 import { ArchiveBlock } from "@/blocks/ArchiveBlock/Component";
 import { CallToActionBlock } from "@/blocks/CallToAction/Component";
@@ -18,7 +19,7 @@ const blockComponents = {
 
 export const RenderBlocks: React.FC<{
   blocks: Page["layout"][0][];
-  tenant?: Tenant | string;
+  tenant?: Tenant | TenantReference;
 }> = (props) => {
   const { blocks, tenant } = props;
 

@@ -55,12 +55,14 @@ const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
     "http://localhost:3000";
 
   const tenantSlug = resolveTenantSlug(doc);
-  const normalizedSlug =
-    typeof doc?.slug === "string"
-      ? doc.slug
-      : Array.isArray(doc?.slug)
-        ? doc?.slug.join("/")
-        : "home";
+  const slugValue = doc?.slug as unknown;
+  let normalizedSlug = "home";
+
+  if (typeof slugValue === "string") {
+    normalizedSlug = slugValue || "home";
+  } else if (Array.isArray(slugValue)) {
+    normalizedSlug = slugValue.join("/") || "home";
+  }
 
   const path =
     normalizedSlug === "home" || normalizedSlug === ""

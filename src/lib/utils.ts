@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-type TenantReference =
+export type TenantReference =
   | string
   | {
       id?: string;
