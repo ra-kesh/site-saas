@@ -14,10 +14,10 @@
     "db:seed": "bun run src/seed.ts"
   },
   "dependencies": {
-    "@payloadcms/admin-bar": "^3.60.0",
     "@hookform/resolvers": "^5.2.2",
-    "@payloadcms/live-preview-react": "^3.60.0",
+    "@payloadcms/admin-bar": "^3.60.0",
     "@payloadcms/db-mongodb": "^3.60.0",
+    "@payloadcms/live-preview-react": "^3.60.0",
     "@payloadcms/next": "^3.60.0",
     "@payloadcms/plugin-form-builder": "^3.60.0",
     "@payloadcms/plugin-multi-tenant": "^3.60.0",
@@ -51,6 +51,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.90.5",
     "@trpc/client": "^11.6.0",
     "@trpc/server": "^11.6.0",
