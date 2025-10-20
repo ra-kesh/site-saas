@@ -1,10 +1,13 @@
-import type { Config } from 'src/payload-types'
+import type { Config } from '@/payload-types'
 
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { unstable_cache } from 'next/cache'
 
-type Collection = keyof Config['collections']
+type CollectionKeys = keyof Config['collections']
+type Collection = [CollectionKeys] extends [never]
+  ? string
+  : Extract<CollectionKeys, string>
 
 async function getDocument(collection: Collection, slug: string, depth = 0) {
   const payload = await getPayload({ config: configPromise })
@@ -27,5 +30,5 @@ async function getDocument(collection: Collection, slug: string, depth = 0) {
  */
 export const getCachedDocument = (collection: Collection, slug: string) =>
   unstable_cache(async () => getDocument(collection, slug), [collection, slug], {
-    tags: [`${collection}_${slug}`],
+    tags: [`${String(collection)}_${slug}`],
   })
