@@ -83,6 +83,8 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    theme: "light",
+    suppressHydrationWarning: true,
   },
   collections: [Users, Media, Tenants, Pages, Posts, Categories],
   editor: lexicalEditor(),

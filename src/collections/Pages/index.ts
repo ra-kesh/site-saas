@@ -121,13 +121,33 @@ export const Pages: CollectionConfig<"pages"> = {
         position: "sidebar",
       },
     },
-    slugField(),
+    slugField({
+      overrides: (field) => {
+        const slug = field.fields.find(
+          (candidate) =>
+            typeof (candidate as { name?: unknown }).name === "string" &&
+            (candidate as { name: string }).name === "slug",
+        ) as { type?: string; unique?: boolean } | undefined;
+
+        if (slug && slug.type === "text") {
+          slug.unique = false;
+        }
+
+        return field;
+      },
+    }),
   ],
   hooks: {
     afterChange: [revalidatePage],
     beforeChange: [populatePublishedAt],
     afterDelete: [revalidateDelete],
   },
+  indexes: [
+    {
+      fields: ['slug', 'tenant'],
+      unique: true,
+    },
+  ],
   versions: {
     drafts: {
       autosave: {
