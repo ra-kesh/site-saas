@@ -14,6 +14,9 @@ import { generatePreviewPath } from "../../utilities/generatePreviewPath";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import type { TenantReference } from "@/lib/utils";
 
+import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
+import { isSuperAdmin } from "@/lib/access";
+
 import {
   MetaDescriptionField,
   MetaImageField,
@@ -39,7 +42,7 @@ export const Pages: CollectionConfig<"pages"> = {
     tenant: true,
   },
   admin: {
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", "tenant", "slug", "updatedAt"],
     livePreview: {
       url: async ({ data, req }) =>
         await generatePreviewPath({
@@ -126,7 +129,7 @@ export const Pages: CollectionConfig<"pages"> = {
         const slug = field.fields.find(
           (candidate) =>
             typeof (candidate as { name?: unknown }).name === "string" &&
-            (candidate as { name: string }).name === "slug",
+            (candidate as { name: string }).name === "slug"
         ) as { type?: string; unique?: boolean } | undefined;
 
         if (slug && slug.type === "text") {
@@ -144,7 +147,7 @@ export const Pages: CollectionConfig<"pages"> = {
   },
   indexes: [
     {
-      fields: ['slug', 'tenant'],
+      fields: ["slug", "tenant"],
       unique: true,
     },
   ],

@@ -50,7 +50,7 @@ export const Posts: CollectionConfig<"posts"> = {
     tenant: true,
   },
   admin: {
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", "tenant", "slug", "updatedAt"],
     livePreview: {
       url: async ({ data, req }) =>
         await generatePreviewPath({

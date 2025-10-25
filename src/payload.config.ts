@@ -130,6 +130,11 @@ export default buildConfig({
         forms: {},
         "form-submissions": {},
       },
+      tenantField: {
+        admin: {
+          disableListColumn: false,
+        },
+      },
       tenantsArrayField: {
         includeDefaultField: false,
       },
