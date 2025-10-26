@@ -2,7 +2,18 @@ import { withPayload } from "@payloadcms/next/withPayload";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  cacheComponents: true,
+  cacheLife: {
+    tenantPages: {
+      revalidate: 60 * 30,
+    },
+    tenantPosts: {
+      revalidate: 60 * 30,
+    },
+    redirects: {
+      revalidate: 60 * 60,
+    },
+  },
   experimental: {
     turbopackFileSystemCacheForDev: true,
   },
