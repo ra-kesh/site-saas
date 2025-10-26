@@ -1,6 +1,10 @@
 import type { CollectionConfig } from "payload";
 
 import { isSuperAdmin } from "@/lib/access";
+import {
+  revalidateTenant,
+  revalidateTenantDelete,
+} from "@/hooks/revalidateTenant";
 
 export const Tenants: CollectionConfig = {
   slug: "tenants",
@@ -8,6 +12,10 @@ export const Tenants: CollectionConfig = {
     create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
+  },
+  hooks: {
+    afterChange: [revalidateTenant],
+    afterDelete: [revalidateTenantDelete],
   },
   admin: {
     useAsTitle: "slug",

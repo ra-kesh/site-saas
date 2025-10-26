@@ -21,7 +21,7 @@ type PageParams = Promise<{
 
 type PageDoc = Page;
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 const getSlugFromParams = (pageSegments?: string[]) => {
   if (!pageSegments || pageSegments.length === 0) {

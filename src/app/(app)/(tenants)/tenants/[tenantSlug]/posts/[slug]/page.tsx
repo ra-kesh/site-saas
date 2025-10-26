@@ -24,7 +24,7 @@ type PageParams = Promise<{
 
 type PostDoc = Post
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export default async function TenantPostPage({ params }: { params: PageParams }) {
   const { isEnabled: draft } = await draftMode();

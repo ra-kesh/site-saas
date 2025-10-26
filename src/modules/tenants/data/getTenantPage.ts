@@ -75,7 +75,7 @@ const getPublishedTenantPage = ({
       }),
     ["tenant-page", tenantSlug, pageSlug],
     {
-      revalidate: 60,
+      revalidate: false,
       tags: [
         "tenants",
         "pages",

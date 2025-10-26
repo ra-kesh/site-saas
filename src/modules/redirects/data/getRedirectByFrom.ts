@@ -27,7 +27,7 @@ export const getRedirectByFrom = async (from: string): Promise<Redirect | null> 
     () => fetchRedirectByFrom(from),
     ["redirect-by-from", from],
     {
-      revalidate: 300,
+      revalidate: false,
       tags: ["redirects", `redirect:${from}`],
     }
   )();

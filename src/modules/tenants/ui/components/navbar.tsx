@@ -5,6 +5,7 @@ import { ShoppingCartIcon } from "lucide-react";
 import { generateTenantURL } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Media, Tenant } from "@/payload-types";
+import { getMediaUrl } from "@/utilities/getMediaUrl";
 
 interface Props {
   tenant: Tenant;
@@ -15,7 +16,18 @@ const getImageUrl = (image: Tenant["image"]) => {
 
   if (typeof image === "object") {
     const media = image as Media;
-    return media.url ?? media.thumbnailURL ?? media.sizes?.thumbnail?.url ?? null;
+    const baseUrl =
+      media.url ??
+      media.thumbnailURL ??
+      media.sizes?.thumbnail?.url ??
+      media.sizes?.square?.url ??
+      null;
+
+    if (!baseUrl) {
+      return null;
+    }
+
+    return getMediaUrl(baseUrl, media.updatedAt);
   }
 
   return null;
