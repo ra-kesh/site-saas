@@ -71,6 +71,7 @@ export const generatePreviewPath = async ({ collection, slug, tenant, req }: Pro
     collection,
     slug: decodedSlug,
     tenantSlug,
+    includeTenantPrefix: true,
   })
 
   const encodedParams = new URLSearchParams({
