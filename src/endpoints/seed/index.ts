@@ -183,7 +183,15 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
         slug: featuredPost.slug,
         tenantSlug,
       })
-    : `/tenants/${tenantSlug}`
+    : generateTenantContentPath({
+        slug: 'home',
+        tenantSlug,
+      })
+
+  const contactUrl = generateTenantContentPath({
+    slug: 'contact',
+    tenantSlug,
+  })
 
   await payload.create({
     collection: 'pages',
@@ -192,7 +200,7 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
     },
     data: home({
       categories: categoryIds,
-      contactUrl: `/tenants/${tenantSlug}/contact`,
+      contactUrl,
       featuredPostUrl,
       tenantId,
       tenantSlug,

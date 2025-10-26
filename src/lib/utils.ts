@@ -94,14 +94,24 @@ export function generateTenantContentPath({
   collection = "pages",
   slug,
   tenantSlug,
+  includeTenantPrefix,
 }: {
   collection?: CollectionSlug;
   slug?: string | null;
   tenantSlug?: string;
+  includeTenantPrefix?: boolean;
 }) {
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const isSubdomainRoutingEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
+  const shouldIncludeTenantPrefix =
+    includeTenantPrefix !== undefined
+      ? includeTenantPrefix
+      : isDevelopment || !isSubdomainRoutingEnabled;
+
   const segments: string[] = [];
 
-  if (tenantSlug) {
+  if (tenantSlug && shouldIncludeTenantPrefix) {
     segments.push("tenants", tenantSlug);
   }
 
