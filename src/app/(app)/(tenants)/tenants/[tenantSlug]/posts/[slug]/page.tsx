@@ -1,13 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
 
-import { cache } from 'react'
-import { draftMode } from 'next/headers'
-import { notFound } from 'next/navigation'
-import { getPayload } from 'payload'
+import { draftMode } from "next/headers";
+import { notFound } from "next/navigation";
 
-import configPromise from '@payload-config'
-
-import type { Post, Tenant } from '@/payload-types'
+import type { Post } from "@/payload-types";
 
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
@@ -17,85 +13,48 @@ import { PayloadRedirects } from '@/components/PayloadRedirects'
 import { PostHero } from '@/heros/PostHero'
 import RichText from '@/components/RichText'
 import { RelatedPosts } from '@/blocks/RelatedPosts/Component'
-import { generateMeta } from '@/utilities/generateMeta'
-import { extractTenantId, generateTenantContentPath } from '@/lib/utils'
+import { generateMeta } from "@/utilities/generateMeta";
+import { extractTenantId, generateTenantContentPath } from "@/lib/utils";
+import { getTenantPost } from "@/modules/tenants/data/getTenantPost";
 
 type PageParams = Promise<{
   slug: string
   tenantSlug: string
 }>
 
-type TenantDoc = Tenant
 type PostDoc = Post
 
-export const dynamic = 'force-dynamic'
-
-const queryTenant = cache(async (slug: string) => {
-  const payload = await getPayload({ config: configPromise })
-
-  const result = await payload.find({
-    collection: 'tenants',
-    limit: 1,
-    pagination: false,
-    where: {
-      slug: {
-        equals: slug,
-      },
-    },
-  })
-
-  return (result.docs?.[0] as TenantDoc | undefined) ?? undefined
-})
-
-const queryPost = cache(async ({ slug, tenantId }: { slug: string; tenantId: string }) => {
-  const { isEnabled: draft } = await draftMode()
-  const payload = await getPayload({ config: configPromise })
-
-  const result = await payload.find({
-    collection: 'posts',
-    draft,
-    limit: 1,
-    overrideAccess: draft,
-    pagination: false,
-    where: {
-      slug: {
-        equals: slug,
-      },
-      tenant: {
-        equals: tenantId,
-      },
-    },
-  })
-
-  return (result.docs?.[0] as PostDoc | undefined) ?? null
-})
+export const dynamic = "force-dynamic";
 
 export default async function TenantPostPage({ params }: { params: PageParams }) {
-  const { isEnabled: draft } = await draftMode()
-  const { tenantSlug, slug } = await params
+  const { isEnabled: draft } = await draftMode();
+  const { tenantSlug, slug } = await params;
 
-  const decodedTenantSlug = decodeURIComponent(tenantSlug)
-  const tenant = await queryTenant(decodedTenantSlug)
+  const decodedTenantSlug = decodeURIComponent(tenantSlug);
+  const decodedSlug = decodeURIComponent(slug);
+
+  const { tenant, post } = await getTenantPost({
+    draft,
+    postSlug: decodedSlug,
+    tenantSlug: decodedTenantSlug,
+  });
 
   if (!tenant) {
-    notFound()
+    notFound();
   }
 
-  const tenantDoc = tenant
-  const decodedSlug = decodeURIComponent(slug)
-
-  const post = await queryPost({ slug: decodedSlug, tenantId: tenantDoc.id })
+  const tenantDoc = tenant;
 
   const urlPath = generateTenantContentPath({
-    collection: 'posts',
+    collection: "posts",
     slug: decodedSlug,
     tenantSlug: tenantDoc.slug,
-  })
+  });
 
   if (!post) {
     return (
       <>
-        <Navbar slug={tenantDoc.slug} />
+        <Navbar tenant={tenantDoc} />
         <article className="pt-16 pb-16">
           <PageClient />
           <PayloadRedirects url={urlPath} />
@@ -103,19 +62,19 @@ export default async function TenantPostPage({ params }: { params: PageParams })
         </article>
         <Footer />
       </>
-    )
+    );
   }
 
   const relatedPosts =
     post.relatedPosts?.filter((related): related is PostDoc => {
-      if (typeof related !== 'object' || related === null) return false
-      const relatedTenantId = extractTenantId(related.tenant)
-      return !relatedTenantId || relatedTenantId === tenantDoc.id
-    }) ?? []
+      if (typeof related !== "object" || related === null) return false;
+      const relatedTenantId = extractTenantId(related.tenant);
+      return !relatedTenantId || relatedTenantId === tenantDoc.id;
+    }) ?? [];
 
   return (
     <>
-      <Navbar slug={tenantDoc.slug} />
+      <Navbar tenant={tenantDoc} />
       <article className="pt-16 pb-16">
         <PageClient />
         <PayloadRedirects disableNotFound url={urlPath} />
@@ -135,20 +94,25 @@ export default async function TenantPostPage({ params }: { params: PageParams })
       </article>
       <Footer />
     </>
-  )
+  );
 }
 
 export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
-  const { tenantSlug, slug } = await params
-  const decodedTenantSlug = decodeURIComponent(tenantSlug)
-  const tenant = await queryTenant(decodedTenantSlug)
+  const { tenantSlug, slug } = await params;
+  const { isEnabled: draft } = await draftMode();
+
+  const decodedTenantSlug = decodeURIComponent(tenantSlug);
+  const decodedSlug = decodeURIComponent(slug);
+
+  const { tenant, post } = await getTenantPost({
+    draft,
+    postSlug: decodedSlug,
+    tenantSlug: decodedTenantSlug,
+  });
 
   if (!tenant) {
-    notFound()
+    notFound();
   }
 
-  const decodedSlug = decodeURIComponent(slug)
-  const post = await queryPost({ slug: decodedSlug, tenantId: tenant.id })
-
-  return generateMeta({ doc: post })
+  return generateMeta({ doc: post });
 }

@@ -1,11 +1,26 @@
-import type { CollectionAfterChangeHook } from 'payload'
+import type { CollectionAfterChangeHook } from "payload";
 
-import { revalidateTag } from 'next/cache'
+import { revalidateTag } from "next/cache";
 
-export const revalidateRedirects: CollectionAfterChangeHook = ({ doc, req: { payload } }) => {
-  payload.logger.info(`Revalidating redirects`)
+export const revalidateRedirects: CollectionAfterChangeHook = ({
+  doc,
+  previousDoc,
+  req: { payload },
+}) => {
+  payload.logger.info(`Revalidating redirects`);
 
-  revalidateTag('redirects', 'max')
+  revalidateTag("redirects", "max");
 
-  return doc
-}
+  const currentFrom = typeof doc?.from === "string" ? doc.from : undefined;
+  const previousFrom = typeof previousDoc?.from === "string" ? previousDoc.from : undefined;
+
+  if (currentFrom) {
+    revalidateTag(`redirect:${currentFrom}`, "max");
+  }
+
+  if (previousFrom && previousFrom !== currentFrom) {
+    revalidateTag(`redirect:${previousFrom}`, "max");
+  }
+
+  return doc;
+};
