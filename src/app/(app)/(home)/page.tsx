@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { Menu } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,8 @@ export default function Home() {
 
   const trpc = useTRPC();
   const router = useRouter();
+  const sessionQuery = useQuery(trpc.auth.session.queryOptions());
+  const isAuthenticated = Boolean(sessionQuery.data?.user);
 
   const normalizedInput = useMemo(
     () => subdomain.trim().toLowerCase(),
@@ -239,13 +241,13 @@ export default function Home() {
                     </div>
                     <Separator />
                     <div className="py-6">
-                      <a
-                        href="#"
+                      <Link
+                        href={isAuthenticated ? "/admin" : "/sign-up"}
                         className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-accent hover:text-accent-foreground"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        Log in
-                      </a>
+                        {isAuthenticated ? "Dashboard" : "Start building"}
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -257,16 +259,19 @@ export default function Home() {
               <a
                 key={item.name}
                 href={item.href}
-                className="text-sm/6 font-semibold text-foreground hover:text-primary transition-colors"
+                className="text-sm/6 font-semibold text-foreground transition-colors hover:text-primary"
               >
                 {item.name}
               </a>
             ))}
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-            <Button variant="default" asChild>
-              <Link href="/sign-in" className="text-sm/6 font-semibold">
-                Sign In <span aria-hidden="true">&rarr;</span>
+            <Button asChild className="text-sm/6 font-semibold">
+              <Link href={isAuthenticated ? "/admin" : "/sign-up"}>
+                {isAuthenticated ? "Dashboard" : "Start building"}
+                <span aria-hidden="true" className="ml-1">
+                  &rarr;
+                </span>
               </Link>
             </Button>
           </div>
