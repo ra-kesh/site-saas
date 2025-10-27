@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Menu } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,10 @@ import {
   InputGroupInput,
   InputGroupText,
 } from "@/components/ui/input-group";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
+import { useTRPC } from "@/trpc/client";
 
 const navigation = [
   { name: "Product", href: "#" },
@@ -27,8 +32,95 @@ const navigation = [
   { name: "Company", href: "#" },
 ];
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ofpuri.com";
+
+type AvailabilityResult =
+  | {
+      status: "available" | "unavailable" | "invalid";
+      subdomain: string;
+      fullDomain: string | null;
+      message: string;
+      suggestions: string[];
+    }
+  | {
+      status: "error";
+      subdomain: string;
+      fullDomain: null;
+      message: string;
+      suggestions: string[];
+    };
+
 export default function Example() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [subdomain, setSubdomain] = useState("");
+  const [lastResult, setLastResult] = useState<AvailabilityResult | null>(null);
+  const [checkedValue, setCheckedValue] = useState("");
+
+  const trpc = useTRPC();
+
+  const normalizedInput = useMemo(
+    () => subdomain.trim().toLowerCase(),
+    [subdomain]
+  );
+
+  const domainPreview = useMemo(() => {
+    if (!normalizedInput) {
+      return `yourname.${ROOT_DOMAIN}`;
+    }
+
+    const sanitized = normalizedInput.replace(/[^a-z0-9-]/g, "-");
+    const compact = sanitized.replace(/-+/g, "-").replace(/^-|-$/g, "");
+
+    return compact ? `${compact}.${ROOT_DOMAIN}` : `yourname.${ROOT_DOMAIN}`;
+  }, [normalizedInput]);
+
+  const checkAvailability = useMutation(
+    trpc.tenants.checkAvailability.mutationOptions({
+      onSuccess: (data) => {
+        setLastResult(data);
+        setCheckedValue(data.subdomain);
+      },
+      onError: (error, variables) => {
+        const attempted = variables?.subdomain ?? normalizedInput;
+        setLastResult({
+          status: "error",
+          subdomain: attempted,
+          fullDomain: null,
+          message: error.message || "Something went wrong. Try again shortly.",
+          suggestions: [],
+        });
+        setCheckedValue(attempted);
+      },
+    })
+  );
+
+  const isResultStale = lastResult !== null && checkedValue !== normalizedInput;
+  const activeResult =
+    checkAvailability.isPending || !isResultStale ? lastResult : null;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const candidate = normalizedInput;
+    if (!candidate) {
+      setLastResult({
+        status: "invalid",
+        subdomain: "",
+        fullDomain: null,
+        message: "Enter a name to check if your free domain is available.",
+        suggestions: [],
+      });
+      setCheckedValue("");
+      return;
+    }
+
+    checkAvailability.mutate({ subdomain: candidate });
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSubdomain(suggestion);
+    checkAvailability.mutate({ subdomain: suggestion });
+  };
 
   return (
     <div className="bg-background">
@@ -168,27 +260,137 @@ export default function Example() {
                     Build world class website in minutes
                   </h1>
                   <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:max-w-md sm:text-xl/8 lg:max-w-none">
-                    Creating a website for your business doesn’t need to be
-                    complicated. With our website builder, you can effortlessly
-                    design, launch, and grow your website within mintues.
+                    Creating a website for your business doesn’t need to be an
+                    expensive process. With our website builder, You can
+                    effortlessly launch your website within minutes for your
+                    business. No coding experience needed.
                   </p>
-                  <div className="mt-10 flex items-center justify-between gap-x-6">
-                    <InputGroup className="h-10">
-                      <InputGroupAddon>
-                        <InputGroupText>https://</InputGroupText>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        placeholder="sitename"
-                        className="!pl-0.5 "
-                      />
-                      <InputGroupAddon align="inline-end">
-                        <InputGroupText>ofpuri.com</InputGroupText>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    <Button size="lg" asChild>
-                      <a href="#">Get started</a>
-                    </Button>
-                  </div>
+                  <form
+                    onSubmit={handleSubmit}
+                    className="mt-10 flex w-full md:w-9/12 flex-col gap-y-4"
+                  >
+                    <div className="flex flex-col ">
+                      <InputGroup className="h-10 flex-1">
+                        <InputGroupAddon>
+                          <InputGroupText>https://</InputGroupText>
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          value={subdomain}
+                          onChange={(event) => {
+                            const next = event.target.value
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")
+                              .replace(/[^a-z0-9-]/g, "")
+                              .replace(/-+/g, "-")
+                              .replace(/^-+/, "")
+                              .replace(/-+$/, "");
+                            setSubdomain(next);
+                          }}
+                          placeholder="sitename"
+                          className="!pl-0.5"
+                          aria-label="Desired site name"
+                        />
+                        <InputGroupAddon align="inline-end">
+                          <InputGroupText>.{ROOT_DOMAIN}</InputGroupText>
+                        </InputGroupAddon>
+                      </InputGroup>
+                      <p className="text-xs text-muted-foreground py-1">
+                        Letters, numbers, and hyphens only.
+                        {/* We’ll set you up at{" "}
+                        <span className="font-medium text-foreground">
+                          {domainPreview}
+                        </span>
+                        . */}
+                      </p>
+                      <Button
+                        size="lg"
+                        type="submit"
+                        className="sm:w-auto mt-3"
+                        disabled={checkAvailability.isPending}
+                      >
+                        {checkAvailability.isPending ? (
+                          <>
+                            <Spinner className="mr-2" />
+                            Checking...
+                          </>
+                        ) : (
+                          "Reserve your free domain now"
+                        )}
+                      </Button>
+                    </div>
+
+                    {(checkAvailability.isPending || activeResult) && (
+                      <Alert
+                        variant={
+                          checkAvailability.isPending
+                            ? "default"
+                            : activeResult?.status === "available"
+                              ? "default"
+                              : "destructive"
+                        }
+                      >
+                        {checkAvailability.isPending && (
+                          <>
+                            <Spinner className="mt-1" />
+                            <AlertTitle>Checking availability...</AlertTitle>
+                            <AlertDescription>
+                              We&rsquo;ll confirm your free domain in just a
+                              moment.
+                            </AlertDescription>
+                          </>
+                        )}
+                        {!checkAvailability.isPending && activeResult && (
+                          <>
+                            <AlertTitle>
+                              {activeResult.status === "available"
+                                ? `${activeResult.fullDomain} is available`
+                                : activeResult.status === "error"
+                                  ? "We hit a snag checking that name"
+                                  : activeResult.status === "invalid"
+                                    ? "Let's pick a name that works"
+                                    : "That name isn’t available yet"}
+                            </AlertTitle>
+                            <AlertDescription>
+                              <p>{activeResult.message}</p>
+                              {activeResult.status === "available" &&
+                                activeResult.fullDomain && (
+                                  <p className="text-foreground">
+                                    Reserve it now to launch{" "}
+                                    <strong>{activeResult.fullDomain}</strong>.
+                                  </p>
+                                )}
+                              {activeResult.suggestions.length > 0 && (
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                                    Try:
+                                  </span>
+                                  {activeResult.suggestions.map(
+                                    (suggestion) => (
+                                      <Badge
+                                        key={suggestion}
+                                        variant="outline"
+                                        asChild
+                                      >
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleSuggestionClick(suggestion)
+                                          }
+                                          className="whitespace-nowrap"
+                                        >
+                                          {suggestion}.{ROOT_DOMAIN}
+                                        </button>
+                                      </Badge>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                            </AlertDescription>
+                          </>
+                        )}
+                      </Alert>
+                    )}
+                  </form>
                 </div>
                 <div className="mt-14 flex justify-end gap-8 sm:-mt-44 sm:justify-start sm:pl-20 lg:mt-0 lg:pl-0">
                   <div className="ml-auto w-44 flex-none space-y-8 pt-32 sm:ml-0 sm:pt-80 lg:order-last lg:pt-36 xl:order-none xl:pt-80">
