@@ -96,7 +96,12 @@ export const SignUpView = () => {
               Sites of Puri
             </span>
           </Link>
-          <Button asChild variant="secondary" size="sm" className="text-base">
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="text-base text-primary hover:text-primary"
+          >
             <Link prefetch href="/sign-in">
               Sign in
             </Link>
