@@ -25,12 +25,20 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { useTRPC } from "@/trpc/client";
+import Link from "next/link";
+import { Poppins } from "next/font/google";
+import { cn } from "@/utilities/ui";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["700"],
+});
 
 const navigation = [
-  { name: "Product", href: "#" },
+  { name: "How it works", href: "#" },
   { name: "Features", href: "#" },
-  { name: "Marketplace", href: "#" },
-  { name: "Company", href: "#" },
+  { name: "Pricing", href: "#" },
+  { name: "Testimonials", href: "#" },
 ];
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ofpuri.com";
@@ -173,11 +181,22 @@ export default function Home() {
           aria-label="Global"
           className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8"
         >
-          <div className="flex lg:flex-1">
-            <a href="#" className="-m-1.5 p-1.5">
-              <h1 className="text-xl font-bold text-primary">Sites of Puri</h1>
-            </a>
-          </div>
+          <h1 className="flex lg:flex-1">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <span className="text-lg font-semibold">P</span>
+              </div>
+              <span
+                className={cn(
+                  "text-xl font-semibold text-foreground",
+                  poppins.className
+                )}
+              >
+                Sites of Puri
+              </span>
+            </Link>
+          </h1>
+
           <div className="flex lg:hidden">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -245,10 +264,10 @@ export default function Home() {
             ))}
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-            <Button variant="ghost" asChild>
-              <a href="#" className="text-sm/6 font-semibold">
-                Log in <span aria-hidden="true">&rarr;</span>
-              </a>
+            <Button variant="default" asChild>
+              <Link href="/sign-in" className="text-sm/6 font-semibold">
+                Sign In <span aria-hidden="true">&rarr;</span>
+              </Link>
             </Button>
           </div>
         </nav>
