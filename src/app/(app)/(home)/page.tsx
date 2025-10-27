@@ -395,7 +395,13 @@ export default function Home() {
                                     : "That name isn’t available yet"}
                             </AlertTitle>
                             <AlertDescription>
-                              <p>{activeResult.message}</p>
+                              <p>
+                                {activeResult.status === "available" &&
+                                !isResultStale &&
+                                checkAvailability.status === "success"
+                                  ? "Redirecting to the signup page…"
+                                  : activeResult.message}
+                              </p>
                               {activeResult.status === "available" &&
                                 activeResult.fullDomain && (
                                   <p className="text-foreground">
