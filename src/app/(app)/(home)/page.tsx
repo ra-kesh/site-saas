@@ -14,7 +14,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import {
   InputGroup,
   InputGroupAddon,
@@ -69,6 +68,8 @@ export default function Home() {
   const router = useRouter();
   const sessionQuery = useQuery(trpc.auth.session.queryOptions());
   const isAuthenticated = Boolean(sessionQuery.data?.user);
+  const ctaHref = isAuthenticated ? "/admin" : "/sign-up";
+  const ctaLabel = isAuthenticated ? "Dashboard" : "Start building";
 
   const normalizedInput = useMemo(
     () => subdomain.trim().toLowerCase(),
@@ -215,39 +216,47 @@ export default function Home() {
                 side="right"
                 className="w-full overflow-y-auto sm:max-w-sm"
               >
-                <SheetHeader>
+                <SheetHeader className="px-6 pt-6 pb-4">
                   <SheetTitle className="sr-only">Navigation menu</SheetTitle>
                   <div className="flex items-center justify-between">
-                    <a href="#" className="-m-1.5 p-1.5">
-                      <h1 className="text-xl font-bold text-primary">
-                        Sites of Puri
-                      </h1>
-                    </a>
+                    <Link
+                      href="/"
+                      className="text-xl font-bold text-primary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sites of Puri
+                    </Link>
                   </div>
                 </SheetHeader>
-                <div className="mt-6 flow-root">
-                  <div className="-my-6 divide-y divide-border">
-                    <div className="space-y-2 py-6">
+                <div className="flow-root">
+                  <div className="space-y-6">
+                    <div className="px-6">
                       {navigation.map((item) => (
-                        <a
+                        <Link
                           key={item.name}
                           href={item.href}
-                          className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-accent hover:text-accent-foreground"
+                          className="block rounded-lg px-4 py-3 text-base/7 font-semibold text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           {item.name}
-                        </a>
+                        </Link>
                       ))}
                     </div>
-                    <Separator />
-                    <div className="py-6">
-                      <Link
-                        href={isAuthenticated ? "/admin" : "/sign-up"}
-                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-accent hover:text-accent-foreground"
-                        onClick={() => setMobileMenuOpen(false)}
+                    <div className="border-t border-border px-6 pt-6 pb-8">
+                      <Button
+                        asChild
+                        className="w-full justify-center rounded-lg px-4 py-2.5 text-base font-semibold"
                       >
-                        {isAuthenticated ? "Dashboard" : "Start building"}
-                      </Link>
+                        <Link
+                          href={ctaHref}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {ctaLabel}
+                          <span aria-hidden="true" className="ml-1">
+                            &rarr;
+                          </span>
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -267,8 +276,8 @@ export default function Home() {
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
             <Button asChild className="text-sm/6 font-semibold">
-              <Link href={isAuthenticated ? "/admin" : "/sign-up"}>
-                {isAuthenticated ? "Dashboard" : "Start building"}
+              <Link href={ctaHref}>
+                {ctaLabel}
                 <span aria-hidden="true" className="ml-1">
                   &rarr;
                 </span>
