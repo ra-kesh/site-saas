@@ -50,7 +50,7 @@ type AvailabilityResult =
       suggestions: string[];
     };
 
-export default function Example() {
+export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [subdomain, setSubdomain] = useState("");
   const [lastResult, setLastResult] = useState<AvailabilityResult | null>(null);
@@ -97,6 +97,36 @@ export default function Example() {
   const isResultStale = lastResult !== null && checkedValue !== normalizedInput;
   const activeResult =
     checkAvailability.isPending || !isResultStale ? lastResult : null;
+
+  const buttonLabel = useMemo(() => {
+    if (checkAvailability.isPending) {
+      return "Checking availability...";
+    }
+
+    if (activeResult) {
+      if (activeResult.status === "available") {
+        return "Sign up to reserve this domain";
+      }
+
+      if (activeResult.status === "unavailable") {
+        return "Try another name";
+      }
+
+      if (activeResult.status === "invalid") {
+        return "Update the name to check again";
+      }
+
+      if (activeResult.status === "error") {
+        return "Check availability again";
+      }
+    }
+
+    if (!normalizedInput) {
+      return "Reserve your free domain now";
+    }
+
+    return "Check availability";
+  }, [activeResult, checkAvailability.isPending, normalizedInput]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -305,16 +335,16 @@ export default function Example() {
                       <Button
                         size="lg"
                         type="submit"
-                        className="sm:w-auto mt-3"
+                        className="sm:w-auto mt-3 font-semibold text-base"
                         disabled={checkAvailability.isPending}
                       >
                         {checkAvailability.isPending ? (
                           <>
                             <Spinner className="mr-2" />
-                            Checking...
+                            {buttonLabel}
                           </>
                         ) : (
-                          "Reserve your free domain now"
+                          buttonLabel
                         )}
                       </Button>
                     </div>
@@ -355,7 +385,7 @@ export default function Example() {
                               {activeResult.status === "available" &&
                                 activeResult.fullDomain && (
                                   <p className="text-foreground">
-                                    Reserve it now to launch{" "}
+                                    Create your account to claim{" "}
                                     <strong>{activeResult.fullDomain}</strong>.
                                   </p>
                                 )}
