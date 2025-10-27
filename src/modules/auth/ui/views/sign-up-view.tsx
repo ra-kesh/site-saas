@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Poppins } from "next/font/google";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -30,8 +30,19 @@ const poppins = Poppins({
   weight: ["700"],
 });
 
+const sanitizeSitename = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+
 export const SignUpView = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialSitename = sanitizeSitename(searchParams.get("sitename") ?? "");
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -54,7 +65,7 @@ export const SignUpView = () => {
     defaultValues: {
       email: "",
       password: "",
-      sitename: "",
+      sitename: initialSitename,
     },
   });
 

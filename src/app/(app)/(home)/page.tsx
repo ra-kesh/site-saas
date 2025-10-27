@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Menu } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,22 +58,23 @@ export default function Home() {
   const [checkedValue, setCheckedValue] = useState("");
 
   const trpc = useTRPC();
+  const router = useRouter();
 
   const normalizedInput = useMemo(
     () => subdomain.trim().toLowerCase(),
     [subdomain]
   );
 
-  const domainPreview = useMemo(() => {
-    if (!normalizedInput) {
-      return `yourname.${ROOT_DOMAIN}`;
-    }
+  // const domainPreview = useMemo(() => {
+  //   if (!normalizedInput) {
+  //     return `yourname.${ROOT_DOMAIN}`;
+  //   }
 
-    const sanitized = normalizedInput.replace(/[^a-z0-9-]/g, "-");
-    const compact = sanitized.replace(/-+/g, "-").replace(/^-|-$/g, "");
+  //   const sanitized = normalizedInput.replace(/[^a-z0-9-]/g, "-");
+  //   const compact = sanitized.replace(/-+/g, "-").replace(/^-|-$/g, "");
 
-    return compact ? `${compact}.${ROOT_DOMAIN}` : `yourname.${ROOT_DOMAIN}`;
-  }, [normalizedInput]);
+  //   return compact ? `${compact}.${ROOT_DOMAIN}` : `yourname.${ROOT_DOMAIN}`;
+  // }, [normalizedInput]);
 
   const checkAvailability = useMutation(
     trpc.tenants.checkAvailability.mutationOptions({
@@ -130,6 +132,18 @@ export default function Home() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (
+      activeResult &&
+      activeResult.status === "available" &&
+      !isResultStale &&
+      !checkAvailability.isPending
+    ) {
+      router.push(
+        `/sign-up?sitename=${encodeURIComponent(activeResult.subdomain)}`
+      );
+      return;
+    }
 
     const candidate = normalizedInput;
     if (!candidate) {
