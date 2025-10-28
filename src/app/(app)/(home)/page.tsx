@@ -76,17 +76,6 @@ export default function Home() {
     [subdomain]
   );
 
-  // const domainPreview = useMemo(() => {
-  //   if (!normalizedInput) {
-  //     return `yourname.${ROOT_DOMAIN}`;
-  //   }
-
-  //   const sanitized = normalizedInput.replace(/[^a-z0-9-]/g, "-");
-  //   const compact = sanitized.replace(/-+/g, "-").replace(/^-|-$/g, "");
-
-  //   return compact ? `${compact}.${ROOT_DOMAIN}` : `yourname.${ROOT_DOMAIN}`;
-  // }, [normalizedInput]);
-
   const checkAvailability = useMutation(
     trpc.tenants.checkAvailability.mutationOptions({
       onSuccess: (data) => {
