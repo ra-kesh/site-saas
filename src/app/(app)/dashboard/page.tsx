@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,11 +37,21 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ofpuri.com";
 export default function DashboardPage() {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const sessionQuery = useQuery(trpc.auth.session.queryOptions());
+  const sessionUserId = sessionQuery.data?.user?.id;
+  const tenantQueryOptions = useMemo(
+    () => trpc.tenants.getCurrent.queryOptions(),
+    [trpc]
+  );
+  const tenantQueryKey = useMemo(
+    () => trpc.tenants.getCurrent.queryKey(),
+    [trpc]
+  );
   const tenantQuery = useQuery({
-    ...trpc.tenants.getCurrent.queryOptions(),
-    enabled: Boolean(sessionQuery.data?.user),
+    ...tenantQueryOptions,
+    enabled: Boolean(sessionUserId),
   });
 
   const tenant = tenantQuery.data;
@@ -49,6 +63,31 @@ export default function DashboardPage() {
   const [primaryAudience, setPrimaryAudience] = useState("");
   const [primaryGoal, setPrimaryGoal] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const previousUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    queryClient.setQueryData(tenantQueryKey, undefined);
+  }, [queryClient, tenantQueryKey]);
+
+  useEffect(() => {
+    const currentUserId = sessionUserId ?? null;
+    const previousUserId = previousUserIdRef.current;
+
+    if (!currentUserId) {
+      if (previousUserId) {
+        queryClient.removeQueries({ queryKey: tenantQueryKey });
+        previousUserIdRef.current = null;
+      }
+      return;
+    }
+
+    if (previousUserId && previousUserId !== currentUserId) {
+      queryClient.setQueryData(tenantQueryKey, undefined);
+      queryClient.invalidateQueries({ queryKey: tenantQueryKey });
+    }
+
+    previousUserIdRef.current = currentUserId;
+  }, [queryClient, sessionUserId, tenantQueryKey]);
 
   const generateSite = useMutation({
     mutationFn: async (input: {
@@ -71,21 +110,24 @@ export default function DashboardPage() {
       if (!response.ok) {
         const message = await response.text();
         throw new Error(
-          message || "We couldn't start generating your draft. Try again."
+          message || "We couldn't generate your template. Try again."
         );
       }
 
       return response.json() as Promise<{ success: boolean }>;
     },
     onSuccess: () => {
-      toast.success("We’re preparing your draft with those details.");
+      toast.success(
+        "Template generated! Visit your site or open the admin to keep editing."
+      );
       setIsGenerateOpen(false);
+      void tenantQuery.refetch();
     },
     onError: (error) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "We couldn't start the draft. Try again."
+          : "We couldn't generate your template. Try again."
       );
     },
   });
@@ -103,7 +145,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (tenant?.name) {
       setBusinessName(tenant.name);
+      return;
     }
+
+    setBusinessName("");
   }, [tenant?.name]);
 
   if (isLoading || !tenant) {
@@ -117,6 +162,7 @@ export default function DashboardPage() {
 
   const welcomeName = sessionQuery.data?.user?.email ?? "there";
   const displayDomain = `https://${tenant.slug}.${ROOT_DOMAIN}`;
+  const hasSeeded = Boolean(tenant.hasSeeded);
 
   return (
     <div className="space-y-6">
@@ -143,10 +189,43 @@ export default function DashboardPage() {
             </Link>
           </CardDescription>
         </CardHeader>
-        <CardFooter>
-          <Button type="button" onClick={() => setIsGenerateOpen(true)}>
-            Generate
-          </Button>
+        <CardFooter className="flex flex-wrap items-center gap-3">
+          {hasSeeded ? (
+            <>
+              <Button asChild>
+                <Link
+                  href={displayDomain}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Visit site
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/admin">Open admin</Link>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsGenerateOpen(true)}
+                disabled={generateSite.isPending}
+              >
+                {generateSite.isPending
+                  ? "Generating template…"
+                  : "Regenerate template"}
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              onClick={() => setIsGenerateOpen(true)}
+              disabled={generateSite.isPending}
+            >
+              {generateSite.isPending
+                ? "Generating template…"
+                : "Generate template"}
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
@@ -164,8 +243,8 @@ export default function DashboardPage() {
           <DialogHeader>
             <DialogTitle>Tell us about your business</DialogTitle>
             <DialogDescription>
-              We&apos;ll use these details to pre-fill sections in the block
-              editor so you can launch faster.
+              We&apos;ll use these answers to shape your starter template and
+              block recommendations.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -184,7 +263,7 @@ export default function DashboardPage() {
                 !trimmedGoal
               ) {
                 setFormError(
-                  "Please fill in every field so we can tailor your draft."
+                  "Please answer every question so we can tailor your template."
                 );
                 return;
               }
@@ -218,9 +297,7 @@ export default function DashboardPage() {
               <Textarea
                 id="business-description"
                 value={businessDescription}
-                onChange={(event) =>
-                  setBusinessDescription(event.target.value)
-                }
+                onChange={(event) => setBusinessDescription(event.target.value)}
                 placeholder="Share the products, services, or experience you provide."
                 minLength={10}
                 rows={4}
@@ -260,7 +337,9 @@ export default function DashboardPage() {
                 Cancel
               </Button>
               <Button type="submit" disabled={generateSite.isPending}>
-                {generateSite.isPending ? "Generating…" : "Generate draft plan"}
+                {generateSite.isPending
+                  ? "Generating template…"
+                  : "Generate template"}
               </Button>
             </DialogFooter>
           </form>

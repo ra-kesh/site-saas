@@ -134,7 +134,28 @@ export const tenantsRouter = createTRPCRouter({
       });
     }
 
-    return tenant as Tenant & { image: Media | null };
+    const seededHome = await ctx.db.find({
+      collection: "pages",
+      limit: 1,
+      pagination: false,
+      where: {
+        and: [
+          {
+            slug: { equals: "home" },
+          },
+          {
+            tenant: { equals: tenantId },
+          },
+        ],
+      },
+    });
+
+    const hasSeeded = seededHome.totalDocs > 0;
+
+    return {
+      ...(tenant as Tenant & { image: Media | null }),
+      hasSeeded,
+    };
   }),
   checkAvailability: baseProcedure
     .input(
