@@ -49,6 +49,70 @@ export const Tenants: CollectionConfig = {
       type: "upload",
       relationTo: "media",
     },
+    {
+      name: "status",
+      type: "select",
+      required: true,
+      defaultValue: "pending",
+      admin: {
+        description:
+          "Controls onboarding progress. Pending tenants see the dashboard checklist until they subscribe.",
+      },
+      options: [
+        {
+          label: "Pending",
+          value: "pending",
+        },
+        {
+          label: "Draft",
+          value: "draft",
+        },
+        {
+          label: "Active",
+          value: "active",
+        },
+        {
+          label: "Suspended",
+          value: "suspended",
+        },
+      ],
+    },
+    {
+      name: "templateId",
+      type: "select",
+      options: [
+        {
+          label: "Convention",
+          value: "convention",
+        },
+        {
+          label: "Mobile Shop",
+          value: "mobile-shop",
+        },
+      ],
+      admin: {
+        description:
+          "Website template selected during onboarding. Leave blank until a tenant chooses one.",
+      },
+    },
+    {
+      name: "templateVersion",
+      type: "number",
+      admin: {
+        readOnly: true,
+        description:
+          "Tracks which version of the template the tenant last synced to.",
+      },
+    },
+    {
+      name: "siteConfig",
+      type: "json",
+      admin: {
+        readOnly: true,
+        description:
+          "Generated block configuration tied to the selected template. Managed automatically.",
+      },
+    },
     // {
     //   name: "stripeAccountId",
     //   type: "text",

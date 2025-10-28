@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { authenticated } from "../../access/authenticated";
+import { activeTenantOnly } from "../../access/activeTenant";
 import { authenticatedOrPublished } from "../../access/authenticatedOrPublished";
 import { Archive } from "../../blocks/ArchiveBlock/config";
 import { CallToAction } from "../../blocks/CallToAction/config";
@@ -14,9 +14,6 @@ import { generatePreviewPath } from "../../utilities/generatePreviewPath";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import type { TenantReference } from "@/lib/utils";
 
-import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
-import { isSuperAdmin } from "@/lib/access";
-
 import {
   MetaDescriptionField,
   MetaImageField,
@@ -28,10 +25,10 @@ import {
 export const Pages: CollectionConfig<"pages"> = {
   slug: "pages",
   access: {
-    create: authenticated,
-    delete: authenticated,
+    create: activeTenantOnly,
+    delete: activeTenantOnly,
     read: authenticatedOrPublished,
-    update: authenticated,
+    update: activeTenantOnly,
   },
   // This config controls what's populated by default when a page is referenced
   // https://payloadcms.com/docs/queries/select#defaultpopulate-collection-config-property

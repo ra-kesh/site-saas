@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import type { CollectionConfig } from "payload";
 
 import { defaultLexical } from "@/fields/defaultLexical";
+import { activeTenantOnly } from "../access/activeTenant";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -10,7 +11,10 @@ const dirname = path.dirname(filename);
 export const Media: CollectionConfig = {
   slug: "media",
   access: {
+    create: activeTenantOnly,
+    delete: activeTenantOnly,
     read: () => true,
+    update: activeTenantOnly,
   },
   fields: [
     {

@@ -68,7 +68,7 @@ export default function Home() {
   const router = useRouter();
   const sessionQuery = useQuery(trpc.auth.session.queryOptions());
   const isAuthenticated = Boolean(sessionQuery.data?.user);
-  const ctaHref = isAuthenticated ? "/admin" : "/sign-up";
+  const ctaHref = isAuthenticated ? "/dashboard" : "/sign-up";
   const ctaLabel = isAuthenticated ? "Dashboard" : "Start building";
 
   const normalizedInput = useMemo(

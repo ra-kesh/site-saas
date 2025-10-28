@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import { headers as getHeaders } from "next/headers";
 
 // import { stripe } from "@/lib/stripe";
-import { seedTenant } from "@/endpoints/seed";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 
 import { generateAuthCookie } from "../utils";
@@ -52,6 +51,10 @@ export const authRouter = createTRPCRouter({
         data: {
           name: input.sitename,
           slug: input.sitename,
+          status: "pending",
+          templateId: null,
+          templateVersion: null,
+          siteConfig: null,
           // stripeAccountId: account.id,
         },
       });
@@ -69,28 +72,6 @@ export const authRouter = createTRPCRouter({
           ],
         },
       });
-
-      try {
-        await seedTenant({
-          payload: ctx.db,
-          tenant: {
-            id: tenant.id,
-            slug: tenant.slug,
-            name: tenant.name,
-          },
-          ownerEmail: input.email,
-        });
-      } catch (error) {
-        ctx.db.logger.error({
-          err: error,
-          message: `Failed to seed starter content for tenant "${tenant.slug}"`,
-        });
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to provision starter content for your tenant. Please try again.",
-        });
-      }
 
       const data = await ctx.db.login({
         collection: "users",
@@ -111,6 +92,12 @@ export const authRouter = createTRPCRouter({
         prefix: ctx.db.config.cookiePrefix,
         value: data.token,
       });
+
+      return {
+        tenantId: tenant.id,
+        tenantSlug: tenant.slug,
+        status: "pending" as const,
+      };
     }),
   login: baseProcedure.input(loginSchema).mutation(async ({ input, ctx }) => {
     const data = await ctx.db.login({
