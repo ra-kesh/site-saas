@@ -1,9 +1,11 @@
 import { getPayload } from 'payload'
 import { headers } from 'next/headers'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 import config from '@payload-config'
 import { seedTenant } from '@/endpoints/seed'
 import type { Tenant, User } from '@/payload-types'
+import { generateTenantContentPath } from '@/lib/utils'
 
 export const maxDuration = 60 // This function can run for a maximum of 60 seconds
 
@@ -106,6 +108,42 @@ export async function POST(request: Request): Promise<Response> {
           }
         : undefined,
     })
+
+    const tenantSlug = tenantDoc.slug
+    const tenantTags = [
+      `tenant:${tenantSlug}`,
+      `tenant:${tenantSlug}:page:home`,
+      `tenant:${tenantSlug}:page:contact`,
+      `tenant:${tenantSlug}:page:posts`,
+    ]
+
+    const globalTags = ['tenants', 'pages', 'pages-sitemap', 'posts', 'posts-sitemap']
+
+    for (const tag of [...tenantTags, ...globalTags]) {
+      revalidateTag(tag, 'max')
+    }
+
+    const tenantBasePath = generateTenantContentPath({
+      tenantSlug,
+      slug: 'home',
+      includeTenantPrefix: true,
+    })
+
+    const tenantPagePaths = new Set<string>([tenantBasePath])
+
+    for (const slug of ['contact', 'posts']) {
+      tenantPagePaths.add(
+        generateTenantContentPath({
+          tenantSlug,
+          slug,
+          includeTenantPrefix: true,
+        }),
+      )
+    }
+
+    for (const path of tenantPagePaths) {
+      revalidatePath(path)
+    }
 
     return Response.json({ success: true })
   } catch (e) {
