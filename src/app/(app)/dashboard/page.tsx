@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { CheckCircle2, CreditCard, Globe, Loader2, Sparkles } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, CreditCard, Globe } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,23 +19,28 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTRPC } from "@/trpc/client";
-import { generateTenantURL } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { cn, generateTenantURL } from "@/lib/utils";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ofpuri.com";
 
 const statusMeta: Record<
   "pending" | "draft" | "active" | "suspended",
-  { label: string; description: string; badgeVariant: "secondary" | "outline" | "default" | "destructive" }
+  {
+    label: string;
+    description: string;
+    badgeVariant: "secondary" | "outline" | "default" | "destructive";
+  }
 > = {
   pending: {
     label: "Reserved",
-    description: "You have the subdomain locked. Choose a template to continue.",
+    description:
+      "You have the subdomain locked. Start building your pages next.",
     badgeVariant: "secondary",
   },
   draft: {
-    label: "Draft ready",
-    description: "Preview your generated site and review it before publishing.",
+    label: "Draft in progress",
+    description:
+      "Keep editing your block layout and share the preview for feedback.",
     badgeVariant: "secondary",
   },
   active: {
@@ -54,14 +58,12 @@ const statusMeta: Record<
 export default function DashboardPage() {
   const router = useRouter();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
 
   const sessionQuery = useQuery(trpc.auth.session.queryOptions());
   const tenantQuery = useQuery({
     ...trpc.tenants.getCurrent.queryOptions(),
     enabled: Boolean(sessionQuery.data?.user),
   });
-  const templatesQuery = useQuery(trpc.tenants.listTemplates.queryOptions());
 
   useEffect(() => {
     if (sessionQuery.status !== "success") return;
@@ -71,62 +73,41 @@ export default function DashboardPage() {
     }
   }, [router, sessionQuery.status, sessionQuery.data?.user]);
 
-  const chooseTemplate = useMutation(
-    trpc.tenants.chooseTemplate.mutationOptions({
-      onSuccess: async (updatedTenant, variables) => {
-        toast.success(`Template locked in${variables?.templateId ? `: ${formatTemplateName(variables.templateId)}` : ""}.`);
-        await queryClient.invalidateQueries(
-          trpc.tenants.getCurrent.queryFilter()
-        );
-      },
-      onError: (error) => {
-        toast.error(error.message || "Unable to select template right now.");
-      },
-    })
-  );
-
   const tenant = tenantQuery.data;
-  const templates = templatesQuery.data ?? [];
-  const selectedTemplateId = tenant?.templateId ?? null;
   const displayDomain = tenant ? `${tenant.slug}.${ROOT_DOMAIN}` : null;
   const previewUrl = tenant ? generateTenantURL(tenant.slug) : null;
-
-  const checklist = useMemo(() => {
-    const hasTemplate = Boolean(selectedTemplateId);
-    const isActive = tenant?.status === "active";
-
-    return [
-      {
-        id: "reserve",
-        label: "Reserve your domain",
-        complete: true,
-        description: tenant
-          ? displayDomain
-          : `yourname.${ROOT_DOMAIN}`,
-      },
-      {
-        id: "template",
-        label: "Choose a template",
-        complete: hasTemplate,
-        description: hasTemplate
-          ? formatTemplateName(selectedTemplateId as string)
-          : "Pick a starting point that matches your business.",
-      },
-      {
-        id: "subscribe",
-        label: "Subscribe to publish",
-        complete: isActive,
-        description: isActive
-          ? "Your site is live on the primary domain."
-          : "Unlock admin access and publish by starting your subscription.",
-      },
-    ];
-  }, [selectedTemplateId, tenant, displayDomain]);
 
   const statusCopy =
     tenant?.status && tenant.status in statusMeta
       ? statusMeta[tenant.status as keyof typeof statusMeta]
       : null;
+
+  const hasDraft = tenant?.status === "draft" || tenant?.status === "active";
+  const isPublished = tenant?.status === "active";
+
+  const checklist = [
+    {
+      id: "reserve",
+      label: "Reserve your domain",
+      complete: true,
+      description: tenant ? displayDomain : `yourname.${ROOT_DOMAIN}`,
+    },
+    {
+      id: "build",
+      label: "Build your site",
+      complete: hasDraft,
+      description:
+        "Use the block editor to add sections, update content, and save progress.",
+    },
+    {
+      id: "subscribe",
+      label: "Subscribe to publish",
+      complete: isPublished,
+      description: isPublished
+        ? "Your site is live on the primary domain."
+        : "Unlock admin tools and go live once you start your subscription.",
+    },
+  ];
 
   if (sessionQuery.isLoading || tenantQuery.isLoading) {
     return (
@@ -146,7 +127,8 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>No tenant found</CardTitle>
             <CardDescription>
-              We couldn&apos;t locate a workspace for your account. Contact support for assistance.
+              We couldn&apos;t locate a workspace for your account. Contact
+              support for assistance.
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -166,10 +148,12 @@ export default function DashboardPage() {
           Tenant onboarding
         </Badge>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Let&apos;s prepare your site, {sessionQuery.data?.user?.email ?? "there"}.
+          Let&apos;s prepare your site,{" "}
+          {sessionQuery.data?.user?.email ?? "there"}.
         </h1>
         <p className="text-base text-muted-foreground">
-          Review your reserved domain, pick the starter template that fits, and unlock publishing when you&apos;re ready.
+          Review your reserved domain, start building with blocks, and unlock
+          publishing when you&apos;re ready.
         </p>
       </div>
 
@@ -180,10 +164,13 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Globe className="h-5 w-5 text-primary" />
-                  {displayDomain ? `https://${displayDomain}` : `https://yourname.${ROOT_DOMAIN}`}
+                  {displayDomain
+                    ? `https://${displayDomain}`
+                    : `https://yourname.${ROOT_DOMAIN}`}
                 </CardTitle>
                 <CardDescription>
-                  This domain is reserved for you on ofpuri. Share the preview once your template is ready.
+                  This domain is reserved for you on ofpuri. Share the preview
+                  once you&apos;re happy with your draft.
                 </CardDescription>
               </div>
               {statusCopy && (
@@ -200,7 +187,8 @@ export default function DashboardPage() {
                 </Alert>
               )}
               <div className="rounded-lg border border-dashed border-border bg-background/60 p-4 text-sm text-muted-foreground">
-                Invite teammates or update business details once you unlock the admin panel. Until then, we keep the workspace draft-only.
+                Invite teammates or update business details once you unlock the
+                admin panel. Until then, we keep the workspace draft-only.
                 {previewUrl && (
                   <div className="pt-3 text-xs">
                     Preview link:{" "}
@@ -218,96 +206,6 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl">Pick a starter template</CardTitle>
-              <CardDescription>
-                We curated two experiences based on your upcoming launches. You can customize every section after generating the draft.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              {templates.map((template) => {
-                const isSelected = selectedTemplateId === template.id;
-                const isMutating = chooseTemplate.isPending && chooseTemplate.variables?.templateId === template.id;
-
-                return (
-                  <Card
-                    key={template.id}
-                    className={cn(
-                      "h-full border transition-shadow",
-                      isSelected
-                        ? "border-primary shadow-sm"
-                        : "hover:border-primary/60 hover:shadow-sm"
-                    )}
-                  >
-                    <CardHeader className="space-y-1">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        {template.name}
-                      </CardTitle>
-                      <CardDescription>{template.headline}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm text-muted-foreground">
-                      <p>{template.description}</p>
-                      <p className="font-medium text-foreground">
-                        Ideal for: {template.recommendedFor.join(", ")}
-                      </p>
-                    </CardContent>
-                    <CardFooter className="flex items-center justify-between">
-                      {isSelected ? (
-                        <Badge variant="default">Selected</Badge>
-                      ) : (
-                        <Button
-                          size="sm"
-                          disabled={chooseTemplate.isPending}
-                          onClick={() =>
-                            chooseTemplate.mutate({ templateId: template.id })
-                          }
-                        >
-                          {isMutating && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          )}
-                          Use template
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        type="button"
-                        onClick={() =>
-                          toast.info("Template preview gallery is coming soon.")
-                        }
-                      >
-                        Preview
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </CardContent>
-            <CardFooter className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-              {selectedTemplateId ? (
-                <span>
-                  Your draft will generate using the{" "}
-                  <strong>{formatTemplateName(selectedTemplateId)}</strong>{" "}
-                  experience.
-                </span>
-              ) : (
-                <span>Select a template to generate your draft workspace.</span>
-              )}
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={!selectedTemplateId || tenant.status === "active"}
-                onClick={() => toast.info("Draft generation coming next.")}
-              >
-                Generate draft site
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Launch checklist</CardTitle>
               <CardDescription>
                 Track the steps before you unlock the full admin experience.
@@ -318,8 +216,10 @@ export default function DashboardPage() {
                 <div
                   key={item.id}
                   className={cn(
-                    "flex items-start gap-3 rounded-lg border border-transparent px-3 py-2",
-                    item.complete ? "bg-muted/40" : "border-dashed border-border"
+                    "flex items-start gap-3 rounded-lg border border-transparent px-3 py-3",
+                    item.complete
+                      ? "bg-muted/40"
+                      : "border-dashed border-border"
                   )}
                 >
                   <CheckCircle2
@@ -340,20 +240,27 @@ export default function DashboardPage() {
               ))}
             </CardContent>
           </Card>
+        </div>
 
+        <div className="space-y-6">
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">Publish when you&apos;re ready</CardTitle>
+              <CardTitle className="text-lg">
+                Publish when you&apos;re ready
+              </CardTitle>
               <CardDescription>
                 Subscribe to unlock the admin tools and push your site live.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>
-                We&apos;ll grant limited admin access through a proxy so you can keep editing before you pay. Publishing still requires an active subscription.
+                We&apos;ll grant limited admin access through a proxy so you can
+                keep editing before you pay. Publishing still requires an active
+                subscription.
               </p>
               <p>
-                Need help deciding? Our team can walk you through both templates and recommend the right integrations.
+                Need help deciding? Our team can walk you through the editor,
+                integrations, and best practices.
               </p>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
@@ -370,15 +277,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}
-
-function formatTemplateName(templateId: string) {
-  switch (templateId) {
-    case "mobile-shop":
-      return "Mobile Shop";
-    case "convention":
-      return "Convention";
-    default:
-      return templateId;
-  }
 }

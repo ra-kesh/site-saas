@@ -186,26 +186,6 @@ export interface Tenant {
    * Controls onboarding progress. Pending tenants see the dashboard checklist until they subscribe.
    */
   status: 'pending' | 'draft' | 'active' | 'suspended';
-  /**
-   * Website template selected during onboarding. Leave blank until a tenant chooses one.
-   */
-  templateId?: ('convention' | 'mobile-shop') | null;
-  /**
-   * Tracks which version of the template the tenant last synced to.
-   */
-  templateVersion?: number | null;
-  /**
-   * Generated block configuration tied to the selected template. Managed automatically.
-   */
-  siteConfig?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1138,9 +1118,6 @@ export interface TenantsSelect<T extends boolean = true> {
   slug?: T;
   image?: T;
   status?: T;
-  templateId?: T;
-  templateVersion?: T;
-  siteConfig?: T;
   updatedAt?: T;
   createdAt?: T;
 }

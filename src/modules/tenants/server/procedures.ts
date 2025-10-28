@@ -7,13 +7,6 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "@/trpc/init";
-import {
-  getSiteTemplateById,
-  isSiteTemplateId,
-  SiteTemplateId,
-  SITE_TEMPLATES,
-} from "@/modules/templates/data/templates";
-
 const MAX_SUBDOMAIN_LENGTH = 63;
 const MIN_SUBDOMAIN_LENGTH = 3;
 const SUBDOMAIN_PATTERN =
@@ -143,50 +136,6 @@ export const tenantsRouter = createTRPCRouter({
 
     return tenant as Tenant & { image: Media | null };
   }),
-  listTemplates: baseProcedure.query(() => SITE_TEMPLATES),
-  chooseTemplate: protectedProcedure
-    .input(
-      z.object({
-        templateId: z.string().refine(isSiteTemplateId, {
-          message: "Unsupported template.",
-        }),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const tenantId = resolvePrimaryTenantId(ctx.session.user as User);
-
-      if (!tenantId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "No tenant found for the current user.",
-        });
-      }
-
-      const template = getSiteTemplateById(input.templateId as SiteTemplateId);
-
-      const updated = await ctx.db.update({
-        collection: "tenants",
-        id: tenantId,
-        data: {
-          templateId: template.id,
-          status: "draft",
-          templateVersion: 1,
-          siteConfig: {
-            templateId: template.id,
-            assignedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      if (!updated) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Unable to update tenant template selection.",
-        });
-      }
-
-      return updated as Tenant;
-    }),
   checkAvailability: baseProcedure
     .input(
       z.object({

@@ -52,9 +52,6 @@ export const authRouter = createTRPCRouter({
           name: input.sitename,
           slug: input.sitename,
           status: "pending",
-          templateId: null,
-          templateVersion: null,
-          siteConfig: null,
           // stripeAccountId: account.id,
         },
       });

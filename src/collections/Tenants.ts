@@ -77,42 +77,6 @@ export const Tenants: CollectionConfig = {
         },
       ],
     },
-    {
-      name: "templateId",
-      type: "select",
-      options: [
-        {
-          label: "Convention",
-          value: "convention",
-        },
-        {
-          label: "Mobile Shop",
-          value: "mobile-shop",
-        },
-      ],
-      admin: {
-        description:
-          "Website template selected during onboarding. Leave blank until a tenant chooses one.",
-      },
-    },
-    {
-      name: "templateVersion",
-      type: "number",
-      admin: {
-        readOnly: true,
-        description:
-          "Tracks which version of the template the tenant last synced to.",
-      },
-    },
-    {
-      name: "siteConfig",
-      type: "json",
-      admin: {
-        readOnly: true,
-        description:
-          "Generated block configuration tied to the selected template. Managed automatically.",
-      },
-    },
     // {
     //   name: "stripeAccountId",
     //   type: "text",
