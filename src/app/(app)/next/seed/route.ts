@@ -7,6 +7,16 @@ import type { Tenant, User } from '@/payload-types'
 
 export const maxDuration = 60 // This function can run for a maximum of 60 seconds
 
+type SeedRequestBody = {
+  tenantSlug?: string
+  business?: {
+    name?: string
+    description?: string
+    audience?: string
+    primaryGoal?: string
+  }
+}
+
 const resolveTenantIdFromUser = (user: User) => {
   if (!Array.isArray(user.tenants) || user.tenants.length === 0) {
     return undefined
@@ -29,13 +39,17 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   let tenantSlugFromBody: string | undefined
+  let businessDetails: SeedRequestBody['business']
+
   try {
-    const body = await request.json()
-    if (body && typeof body.tenantSlug === 'string') {
-      tenantSlugFromBody = body.tenantSlug
+    const body = (await request.json()) as SeedRequestBody
+    if (body && typeof body === 'object') {
+      tenantSlugFromBody =
+        typeof body.tenantSlug === 'string' ? body.tenantSlug.trim() : undefined
+      businessDetails = body.business
     }
   } catch {
-    // ignore JSON parse errors — the body is optional
+    // Body is optional — ignore JSON parse errors
   }
 
   let tenantDoc: Tenant | null = null
@@ -83,6 +97,14 @@ export async function POST(request: Request): Promise<Response> {
         name: tenantDoc.name,
       },
       ownerEmail: (user as User).email,
+      businessDetails: businessDetails
+        ? {
+            name: businessDetails.name?.trim(),
+            description: businessDetails.description?.trim(),
+            audience: businessDetails.audience?.trim(),
+            primaryGoal: businessDetails.primaryGoal?.trim(),
+          }
+        : undefined,
     })
 
     return Response.json({ success: true })

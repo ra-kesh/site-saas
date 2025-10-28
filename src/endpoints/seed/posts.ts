@@ -15,69 +15,76 @@ type SeedCategory = {
 type PostSeedArgs = {
   categories: SeedCategory[]
   tenantId: string
-  tenantName: string
   tenantSlug: string
+  businessName: string
+  businessDescription: string
+  primaryAudience: string
+  primaryGoal: string
 }
 
 export const createPostSeeds = ({
   categories,
   tenantId,
-  tenantName,
   tenantSlug,
+  businessName,
+  businessDescription,
+  primaryAudience,
+  primaryGoal,
 }: PostSeedArgs): Array<RequiredDataFromCollectionSlug<'posts'> & { tenant: string }> => {
   const [firstCategory, secondCategory = firstCategory] = categories
+  const goalPhrase = primaryGoal.toLowerCase()
 
   return [
     {
       tenant: tenantId,
-      title: `Launching the ${tenantName} tenant experience`,
-      slug: `launching-${tenantSlug}`,
+      title: `Why ${businessName} is launching now`,
+      slug: `introducing-${tenantSlug}`,
       _status: 'published',
       categories: firstCategory ? [firstCategory.id] : [],
       content: createRichText([
-        createHeadingNode('h2', [createTextNode('Why Payload for multi-tenant marketing?')]),
+        createHeadingNode('h2', [
+          createTextNode(`Helping ${primaryAudience.toLowerCase()} ${goalPhrase}`),
+        ]),
         createParagraphNode([
           createTextNode(
-            `${tenantName} runs on Payload so tenant content, redirects, and forms stay isolated while sharing a single codebase. The seed data mirrors the production setup we deploy for client work.`,
+            businessDescription,
           ),
         ]),
-        createHeadingNode('h3', [createTextNode('What ships with the starter?')]),
+        createHeadingNode('h3', [createTextNode('What you can expect next')]),
         createParagraphNode([
           createTextNode(
-            'Pages support the hero, content, archive, CTA, and form blocks. Posts include rich text with embeds, categories, and related content. Every document ties back to a tenant so access control stays predictable.',
+            `Over the next few weeks we’re rolling out fresh blocks, sample copy, and launch checklists so you can ${goalPhrase} without slowing down your team.`,
           ),
         ]),
       ]),
       meta: {
-        title: `Launching the ${tenantName} tenant experience`,
-        description:
-          'A walkthrough of the seeded Payload + Next.js starter powering tenant marketing sites.',
+        title: `Why ${businessName} is launching now`,
+        description: `What ${businessName} offers ${primaryAudience.toLowerCase()} and how we’ll help you ${goalPhrase}.`,
       },
     },
     {
       tenant: tenantId,
-      title: `Designing editorial workflows for ${tenantName}`,
-      slug: `designing-tenant-workflows-${tenantSlug}`,
+      title: `Inside the ${businessName} build process`,
+      slug: `inside-${tenantSlug}-build`,
       _status: 'published',
       categories: secondCategory ? [secondCategory.id] : [],
       content: createRichText([
-        createHeadingNode('h2', [createTextNode('Structured content without the friction')]),
+        createHeadingNode('h2', [createTextNode('Structured content without friction')]),
         createParagraphNode([
           createTextNode(
-            'Editors get a focused dashboard with just the collections they need. Scheduled publishing, live preview, and form builder support mean each tenant can launch campaigns independently.',
+            `Our team is using a library of blocks and automation to keep content fresh. You’ll see process updates here each time we improve the experience for ${primaryAudience.toLowerCase()}.`,
           ),
         ]),
-        createHeadingNode('h3', [createTextNode('Blocks that map to React components')]),
+        createHeadingNode('h3', [createTextNode('What happens after launch')]),
         createParagraphNode([
           createTextNode(
-            'Every block in the seed content corresponds to a React component in the frontend. It is easy to swap styles, extend functionality, or add entirely new modules when a tenant requests them.',
+            `After we ship the initial draft, we’ll publish guides on extending components, managing content, and measuring results once you ${goalPhrase}.`,
           ),
         ]),
       ]),
       meta: {
-        title: `Designing editorial workflows for ${tenantName}`,
-        description:
-          'How this starter configures Payload blocks and access control to keep teams shipping quickly.',
+        title: `Inside the ${businessName} build process`,
+        description: `How ${businessName} plans, edits, and publishes updates for ${primaryAudience.toLowerCase()}.`,
       },
     },
   ]

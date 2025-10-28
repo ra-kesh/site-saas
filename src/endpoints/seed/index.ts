@@ -26,12 +26,30 @@ type SeedTenantArgs = {
     name: string
   }
   ownerEmail?: string | null
+  businessDetails?: {
+    name?: string | null
+    description?: string | null
+    audience?: string | null
+    primaryGoal?: string | null
+  }
 }
 
-export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs) => {
+export const seedTenant = async ({
+  payload,
+  tenant,
+  ownerEmail,
+  businessDetails,
+}: SeedTenantArgs) => {
   const { id: tenantId, slug: tenantSlug, name: tenantName } = tenant
 
   payload.logger.info(`Seeding starter content for tenant "${tenantSlug}"…`)
+
+  const displayName = businessDetails?.name?.trim() || tenantName
+  const defaultDescription = `${displayName} delivers block-based marketing sites with reusable sections, live previews, and tenant-specific content powered by Payload.`
+  const description = businessDetails?.description?.trim() || defaultDescription
+  const audience =
+    businessDetails?.audience?.trim() || 'growth-focused founders and marketing teams'
+  const primaryGoal = businessDetails?.primaryGoal?.trim() || 'Start a project'
 
   const existingHome = await payload.find({
     collection: 'pages',
@@ -85,7 +103,10 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
     },
     data: contactForm({
       tenantId,
-      tenantName,
+      businessName: displayName,
+      businessDescription: description,
+      primaryAudience: audience,
+      primaryGoal,
       tenantSlug,
       notificationEmail: ownerEmail ?? undefined,
     }),
@@ -96,8 +117,11 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
   const postSeeds = createPostSeeds({
     categories: categories.map(({ id, title }) => ({ id, title })),
     tenantId,
-    tenantName,
     tenantSlug,
+    businessName: displayName,
+    businessDescription: description,
+    primaryAudience: audience,
+    primaryGoal,
   })
 
   const posts: Post[] = []
@@ -154,7 +178,9 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
     data: contactPage({
       contactFormId: form.id,
       tenantId,
-      tenantName,
+      businessName: displayName,
+      businessDescription: description,
+      primaryGoal,
     }),
   })
 
@@ -170,7 +196,7 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
     data: postsListingPage({
       categories: categoryIds,
       tenantId,
-      tenantName,
+      tenantName: displayName,
     }),
   })
 
@@ -204,7 +230,10 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
       featuredPostUrl,
       tenantId,
       tenantSlug,
-      tenantName,
+      businessName: displayName,
+      businessDescription: description,
+      primaryAudience: audience,
+      primaryGoal,
     }),
   })
 

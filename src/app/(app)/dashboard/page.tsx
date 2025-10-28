@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
+import { toast } from "sonner";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ofpuri.com";
 
@@ -47,6 +48,47 @@ export default function DashboardPage() {
   const [businessDescription, setBusinessDescription] = useState("");
   const [primaryAudience, setPrimaryAudience] = useState("");
   const [primaryGoal, setPrimaryGoal] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const generateSite = useMutation({
+    mutationFn: async (input: {
+      tenantSlug: string;
+      business: {
+        name: string;
+        description: string;
+        audience: string;
+        primaryGoal: string;
+      };
+    }) => {
+      const response = await fetch("/next/seed", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(
+          message || "We couldn't start generating your draft. Try again."
+        );
+      }
+
+      return response.json() as Promise<{ success: boolean }>;
+    },
+    onSuccess: () => {
+      toast.success("We’re preparing your draft with those details.");
+      setIsGenerateOpen(false);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "We couldn't start the draft. Try again."
+      );
+    },
+  });
 
   useEffect(() => {
     if (isLoading) {
@@ -108,8 +150,17 @@ export default function DashboardPage() {
         </CardFooter>
       </Card>
 
-      <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
-        <DialogContent className="sm:max-w-2xl md:max-w-3xl">
+      <Dialog
+        open={isGenerateOpen}
+        onOpenChange={(open) => {
+          setIsGenerateOpen(open);
+          if (!open) {
+            setFormError(null);
+            generateSite.reset();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Tell us about your business</DialogTitle>
             <DialogDescription>
@@ -118,99 +169,99 @@ export default function DashboardPage() {
             </DialogDescription>
           </DialogHeader>
           <form
-            className="grid gap-6 md:grid-cols-[1.3fr,1fr]"
+            className="space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
-              setIsGenerateOpen(false);
+              const trimmedName = businessName.trim();
+              const trimmedDescription = businessDescription.trim();
+              const trimmedAudience = primaryAudience.trim();
+              const trimmedGoal = primaryGoal.trim();
+
+              if (
+                !trimmedName ||
+                !trimmedDescription ||
+                !trimmedAudience ||
+                !trimmedGoal
+              ) {
+                setFormError(
+                  "Please fill in every field so we can tailor your draft."
+                );
+                return;
+              }
+
+              setFormError(null);
+              generateSite.mutate({
+                tenantSlug: tenant.slug,
+                business: {
+                  name: trimmedName,
+                  description: trimmedDescription,
+                  audience: trimmedAudience,
+                  primaryGoal: trimmedGoal,
+                },
+              });
             }}
           >
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="business-name">Business name</Label>
-                <Input
-                  id="business-name"
-                  value={businessName}
-                  onChange={(event) => setBusinessName(event.target.value)}
-                  placeholder="e.g. Of Puri Catering"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="business-description">
-                  What does your business do?
-                </Label>
-                <Textarea
-                  id="business-description"
-                  value={businessDescription}
-                  onChange={(event) =>
-                    setBusinessDescription(event.target.value)
-                  }
-                  placeholder="Share the products, services, or experience you provide."
-                  minLength={10}
-                  rows={4}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="business-audience">Primary audience</Label>
-                <Input
-                  id="business-audience"
-                  value={primaryAudience}
-                  onChange={(event) => setPrimaryAudience(event.target.value)}
-                  placeholder="e.g. Boutique event planners, couples, local shoppers"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="business-goal">Main call to action</Label>
-                <Input
-                  id="business-goal"
-                  value={primaryGoal}
-                  onChange={(event) => setPrimaryGoal(event.target.value)}
-                  placeholder="e.g. Book a tasting, Visit our store, Request a quote"
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="business-name">Business name</Label>
+              <Input
+                id="business-name"
+                value={businessName}
+                onChange={(event) => setBusinessName(event.target.value)}
+                placeholder="e.g. Of Puri Catering"
+                required
+              />
             </div>
-            <div className="space-y-3 rounded-lg border border-dashed border-border bg-muted/50 p-4 text-sm">
-              <h3 className="text-sm font-semibold text-foreground">
-                Preview snapshot
-              </h3>
-              <p className="text-xs uppercase text-muted-foreground">
-                Business name
-              </p>
-              <p className="text-base font-medium text-foreground">
-                {businessName || "Your business name"}
-              </p>
-              <p className="text-xs uppercase text-muted-foreground pt-2">
-                What you do
-              </p>
-              <p className="text-sm text-foreground">
-                {businessDescription ||
-                  "Describe your offering to help us tailor copy."}
-              </p>
-              <p className="text-xs uppercase text-muted-foreground pt-2">
-                Audience
-              </p>
-              <p className="text-sm text-foreground">
-                {primaryAudience || "Who are you trying to reach?"}
-              </p>
-              <p className="text-xs uppercase text-muted-foreground pt-2">
-                Call to action
-              </p>
-              <p className="text-sm text-foreground">
-                {primaryGoal || "What do you want visitors to do first?"}
-              </p>
+            <div className="space-y-2">
+              <Label htmlFor="business-description">
+                What does your business do?
+              </Label>
+              <Textarea
+                id="business-description"
+                value={businessDescription}
+                onChange={(event) =>
+                  setBusinessDescription(event.target.value)
+                }
+                placeholder="Share the products, services, or experience you provide."
+                minLength={10}
+                rows={4}
+                required
+              />
             </div>
-            <DialogFooter className="md:col-span-2">
+            <div className="space-y-2">
+              <Label htmlFor="business-audience">Primary audience</Label>
+              <Input
+                id="business-audience"
+                value={primaryAudience}
+                onChange={(event) => setPrimaryAudience(event.target.value)}
+                placeholder="e.g. Boutique event planners, couples, local shoppers"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="business-goal">Main call to action</Label>
+              <Input
+                id="business-goal"
+                value={primaryGoal}
+                onChange={(event) => setPrimaryGoal(event.target.value)}
+                placeholder="e.g. Book a tasting, Visit our store, Request a quote"
+                required
+              />
+            </div>
+            {formError ? (
+              <p className="text-sm text-destructive">{formError}</p>
+            ) : null}
+            <DialogFooter>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setIsGenerateOpen(false)}
+                disabled={generateSite.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit">Generate Template</Button>
+              <Button type="submit" disabled={generateSite.isPending}>
+                {generateSite.isPending ? "Generating…" : "Generate draft plan"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

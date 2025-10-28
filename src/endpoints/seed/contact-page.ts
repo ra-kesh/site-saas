@@ -10,13 +10,17 @@ import {
 type ContactPageArgs = {
   contactFormId: string
   tenantId: string
-  tenantName: string
+  businessName: string
+  businessDescription: string
+  primaryGoal: string
 }
 
 export const contactPage = ({
   contactFormId,
   tenantId,
-  tenantName,
+  businessName,
+  businessDescription,
+  primaryGoal,
 }: ContactPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => ({
   tenant: tenantId,
   title: 'Contact',
@@ -25,11 +29,12 @@ export const contactPage = ({
   hero: {
     type: 'lowImpact',
     richText: createRichText([
-      createHeadingNode('h1', [createTextNode(`Tell ${tenantName} about your next launch`)]),
+      createHeadingNode('h1', [createTextNode(`Partner with ${businessName}`)]),
       createParagraphNode([
-        createTextNode(
-          'Fill out the brief form below and we will schedule a kickoff call to align on goals, scope, and timelines.',
-        ),
+        createTextNode(businessDescription),
+      ]),
+      createParagraphNode([
+        createTextNode(`Ready to ${primaryGoal.toLowerCase()}? Fill out the brief form below and we’ll plan your next steps together.`),
       ]),
     ]),
   },
@@ -48,7 +53,7 @@ export const contactPage = ({
     },
   ],
   meta: {
-    title: `Contact ${tenantName}`,
-    description: `Start a project with ${tenantName}. We specialize in multi-tenant marketing sites and conversion-focused experiences.`,
+    title: `Contact ${businessName}`,
+    description: `Start a project with ${businessName}. We’ll guide you through the next steps so you can ${primaryGoal.toLowerCase()}.`,
   },
 })

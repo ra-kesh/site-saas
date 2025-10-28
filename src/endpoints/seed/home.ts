@@ -15,7 +15,10 @@ type HomePageArgs = {
   featuredPostUrl: string
   tenantId: string
   tenantSlug: string
-  tenantName: string
+  businessName: string
+  businessDescription: string
+  primaryAudience: string
+  primaryGoal: string
 }
 
 export const home = ({
@@ -24,12 +27,16 @@ export const home = ({
   featuredPostUrl,
   tenantId,
   tenantSlug,
-  tenantName,
+  businessName,
+  businessDescription,
+  primaryAudience,
+  primaryGoal,
 }: HomePageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => {
   const siteHomePath = generateTenantContentPath({
     slug: 'home',
     tenantSlug,
   })
+  const goalPhrase = primaryGoal.toLowerCase()
 
   return {
     tenant: tenantId,
@@ -39,26 +46,27 @@ export const home = ({
     hero: {
       type: 'lowImpact',
       richText: createRichText([
-        createHeadingNode('h1', [createTextNode(`Welcome to ${tenantName}`)]),
+        createHeadingNode('h1', [createTextNode(businessName)]),
+        createParagraphNode([createTextNode(businessDescription)]),
         createParagraphNode([
-          createTextNode(
-            `${tenantName} publishes tenant-specific marketing pages with reusable blocks, live preview, and form integrations powered by Payload.`,
-          ),
-        ]),
-        createParagraphNode([
-          createTextNode('Explore your site at '),
+          createTextNode(`Explore your draft site at `),
           createCustomLinkNode([createTextNode(siteHomePath)], {
             newTab: false,
             url: siteHomePath,
           }),
-          createTextNode(' to see every seeded component in action.'),
+          createTextNode(' and keep iterating as we add more blocks.'),
+        ]),
+        createParagraphNode([
+          createTextNode(
+            `We built this experience for ${primaryAudience.toLowerCase()} who want to ${goalPhrase} without wading through custom code.`,
+          ),
         ]),
       ]),
       links: [
         {
           link: {
             appearance: 'default',
-            label: 'Start a project',
+            label: primaryGoal,
             newTab: false,
             type: 'custom',
             url: contactUrl,
@@ -83,10 +91,12 @@ export const home = ({
           {
             enableLink: false,
             richText: createRichText([
-              createHeadingNode('h2', [createTextNode('Everything editors expect')]),
+              createHeadingNode('h2', [
+                createTextNode(`Built to move fast with ${primaryAudience.toLowerCase()}`),
+              ]),
               createParagraphNode([
                 createTextNode(
-                  'Reusable blocks, previews, scheduled publishing, and tenant isolation are ready to go out of the box.',
+                  'Reusable blocks, previews, scheduled publishing, and tenant isolation are ready to go out of the box so your team can ship updates weekly.',
                 ),
               ]),
             ]),
@@ -109,7 +119,9 @@ export const home = ({
       {
         blockType: 'cta',
         richText: createRichText([
-          createHeadingNode('h2', [createTextNode('Ready to launch your next tenant?')]),
+          createHeadingNode('h2', [
+            createTextNode(`Ready to ${goalPhrase}?`),
+          ]),
           createParagraphNode([
             createTextNode(
               'Provision a tenant, invite collaborators, and start publishing pages without touching code. Each tenant keeps schedules, redirects, and forms separate.',
@@ -136,7 +148,7 @@ export const home = ({
           createHeadingNode('h2', [createTextNode('Latest launch notes')]),
           createParagraphNode([
             createTextNode(
-              `A running feed of improvements and customer stories from ${tenantName}.`,
+              `A running feed of improvements and customer stories from ${businessName}.`,
             ),
           ]),
         ]),
@@ -146,9 +158,8 @@ export const home = ({
       },
     ],
     meta: {
-      title: `${tenantName} — tenant-aware marketing starter`,
-      description:
-        'Explore a multi-tenant Payload + Next.js starter with pages, posts, forms, redirects, and preview-ready blocks.',
+      title: `${businessName} — launch-ready site`,
+      description: `Explore how ${businessName} uses block-based pages, posts, and forms to ${goalPhrase}.`,
     },
   }
 }
