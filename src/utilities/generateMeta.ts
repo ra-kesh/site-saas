@@ -7,6 +7,8 @@ import { mergeOpenGraph } from './mergeOpenGraph'
 import { getServerSideURL } from './getURL'
 import { extractTenantSlug, generateTenantContentPath } from '@/lib/utils'
 
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'Sites of Puri'
+
 const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   const serverUrl = getServerSideURL()
 
@@ -37,9 +39,7 @@ export const generateMeta = async (args: {
 
   const ogImage = getImageURL(doc?.meta?.image)
 
-  const title = doc?.meta?.title
-    ? doc?.meta?.title + ' | Payload Website Template'
-    : 'Payload Website Template'
+  const title = doc?.meta?.title ? `${doc.meta.title} | ${APP_NAME}` : APP_NAME
 
   const tenantSlug =
     doc && typeof doc === 'object' && 'tenant' in doc

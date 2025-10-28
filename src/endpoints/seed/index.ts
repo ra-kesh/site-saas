@@ -45,38 +45,97 @@ export const seedTenant = async ({
   payload.logger.info(`Seeding starter content for tenant "${tenantSlug}"…`)
 
   const displayName = businessDetails?.name?.trim() || tenantName
-  const defaultDescription = `${displayName} delivers block-based marketing sites with reusable sections, live previews, and tenant-specific content powered by Payload.`
+  const defaultDescription = `${displayName} delivers block-based marketing sites with reusable sections, live previews, and tenant-specific content tailored to each workspace.`
   const description = businessDetails?.description?.trim() || defaultDescription
   const audience =
     businessDetails?.audience?.trim() || 'growth-focused founders and marketing teams'
   const primaryGoal = businessDetails?.primaryGoal?.trim() || 'Start a project'
 
-  const existingHome = await payload.find({
-    collection: 'pages',
-    limit: 1,
-    pagination: false,
-    where: {
-      and: [
-        {
-          slug: {
-            equals: 'home',
-          },
-        },
-        {
-          tenant: {
-            equals: tenantId,
-          },
-        },
-      ],
-    },
-  })
+  type SeedCollectionsWithSlug = 'categories' | 'pages' | 'posts'
 
-  if (existingHome.totalDocs > 0) {
-    payload.logger.info(
-      `Seed skipped — tenant "${tenantSlug}" already has a home page. Delete existing content to reseed.`,
-    )
-    return
+  const deleteBySlug = async (collection: SeedCollectionsWithSlug, slug: string) => {
+    const docs = await payload.find({
+      collection,
+      limit: 100,
+      pagination: false,
+      where: {
+        and: [
+          {
+            slug: {
+              equals: slug,
+            },
+          },
+          {
+            tenant: {
+              equals: tenantId,
+            },
+          },
+        ],
+      },
+    })
+
+    if (docs.totalDocs > 0) {
+      await Promise.all(
+        docs.docs.map((doc) =>
+          payload.delete({
+            collection,
+            id: doc.id as string,
+            context: {
+              disableRevalidate: true,
+            },
+          }),
+        ),
+      )
+    }
   }
+
+  const deleteSeedForms = async () => {
+    const existingForms = await payload.find({
+      collection: 'forms',
+      limit: 100,
+      pagination: false,
+      where: {
+        tenant: {
+          equals: tenantId,
+        },
+      },
+    })
+
+    const formsToDelete = existingForms.docs.filter((form) => {
+      if (!form.emails) return false
+      return form.emails.some((email) =>
+        typeof email?.emailFrom === 'string'
+          ? email.emailFrom.includes(`${tenantSlug}.example.com`)
+          : false,
+      )
+    })
+
+    if (formsToDelete.length > 0) {
+      await Promise.all(
+        formsToDelete.map((form) =>
+          payload.delete({
+            collection: 'forms',
+            id: form.id as string,
+            context: {
+              disableRevalidate: true,
+            },
+          }),
+        ),
+      )
+    }
+  }
+
+  await Promise.all([
+    deleteBySlug('pages', 'home'),
+    deleteBySlug('pages', 'contact'),
+    deleteBySlug('pages', 'posts'),
+    deleteBySlug('posts', `introducing-${tenantSlug}`),
+    deleteBySlug('posts', `inside-${tenantSlug}-build`),
+    ...categoryNames.map((title) => deleteBySlug('categories', `${toSlug(title)}-${tenantSlug}`)),
+    deleteSeedForms(),
+  ])
+
+  payload.logger.info('— Cleared previous seed content')
 
   const categories = await Promise.all(
     categoryNames.map((title) =>

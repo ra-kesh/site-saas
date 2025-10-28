@@ -108,7 +108,7 @@ export const home = ({
               createHeadingNode('h3', [createTextNode('Bring your components')]),
               createParagraphNode([
                 createTextNode(
-                  'Connect Payload blocks directly to your React components. Seeded content demonstrates the hero, content, archive, CTA, and form blocks working together.',
+                  'Connect our block library directly to your React components. Seeded content demonstrates the hero, content, archive, CTA, and form blocks working together.',
                 ),
               ]),
             ]),
