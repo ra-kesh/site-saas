@@ -12,6 +12,7 @@ import { Media } from "./collections/Media";
 import { Pages } from "./collections/Pages";
 import { Posts } from "./collections/Posts";
 import { Tenants } from "./collections/Tenants";
+import { Sites } from "./collections/Sites";
 import { Users } from "./collections/Users";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
@@ -86,7 +87,7 @@ export default buildConfig({
     theme: "light",
     suppressHydrationWarning: true,
   },
-  collections: [Users, Media, Tenants, Pages, Posts, Categories],
+  collections: [Users, Media, Tenants, Sites, Pages, Posts, Categories],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   serverURL:

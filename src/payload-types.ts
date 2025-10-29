@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     tenants: Tenant;
+    sites: Site;
     pages: Page;
     posts: Post;
     categories: Category;
@@ -86,6 +87,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
+    sites: SitesSelect<false> | SitesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
@@ -168,6 +170,8 @@ export interface User {
   password?: string | null;
 }
 /**
+ * Tenants represent customer accounts (billing, ownership, and shared settings). Sites will reference the tenant that owns them.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tenants".
  */
@@ -178,7 +182,7 @@ export interface Tenant {
    */
   name: string;
   /**
-   * This is the subdomain for the store (e.g. [slug].example.com)
+   * Legacy tenant slug used for backwards compatibility. Sites will own routing in future phases.
    */
   slug: string;
   image?: (string | null) | Media;
@@ -186,6 +190,27 @@ export interface Tenant {
    * Controls onboarding progress. Pending tenants see the dashboard checklist until they subscribe.
    */
   status: 'pending' | 'draft' | 'active' | 'suspended';
+  /**
+   * Metadata about the organization that owns this account. These values never surface on public sites.
+   */
+  account?: {
+    /**
+     * Primary address for invoices and account notices.
+     */
+    billingEmail?: string | null;
+    /**
+     * Used for billing and feature flags.
+     */
+    plan?: ('free' | 'starter' | 'growth' | 'enterprise') | null;
+    /**
+     * Optional trial expiration date. Leave empty for accounts without a trial.
+     */
+    trialEndsAt?: string | null;
+  };
+  /**
+   * Internal-only notes about this tenant (support history, migration steps, etc.).
+   */
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -281,6 +306,51 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * Sites belong to tenants. Each site can have its own pages, posts, and branding.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites".
+ */
+export interface Site {
+  id: string;
+  /**
+   * Choose which tenant owns this site. Tenants can manage multiple sites.
+   */
+  tenant: string | Tenant;
+  /**
+   * Public-facing name shown in navigation and metadata.
+   */
+  name: string;
+  /**
+   * Used for subdomains and routing (e.g. [slug].example.com).
+   */
+  slug: string;
+  /**
+   * Only active sites are exposed publicly. Draft sites stay internal until ready.
+   */
+  status: 'draft' | 'active' | 'suspended' | 'archived';
+  /**
+   * Internal notes about this site. Use this to track vertical, launch dates, etc.
+   */
+  description?: string | null;
+  /**
+   * Optional branding controls to customize navigation and marketing components.
+   */
+  branding?: {
+    logo?: (string | null) | Media;
+    /**
+     * Hex color (e.g. #0040FF).
+     */
+    primaryColor?: string | null;
+    /**
+     * Hex color used for accents.
+     */
+    secondaryColor?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -916,6 +986,10 @@ export interface PayloadLockedDocument {
         value: string | Tenant;
       } | null)
     | ({
+        relationTo: 'sites';
+        value: string | Site;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: string | Page;
       } | null)
@@ -1118,6 +1192,34 @@ export interface TenantsSelect<T extends boolean = true> {
   slug?: T;
   image?: T;
   status?: T;
+  account?:
+    | T
+    | {
+        billingEmail?: T;
+        plan?: T;
+        trialEndsAt?: T;
+      };
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites_select".
+ */
+export interface SitesSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  slug?: T;
+  status?: T;
+  description?: T;
+  branding?:
+    | T
+    | {
+        logo?: T;
+        primaryColor?: T;
+        secondaryColor?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
