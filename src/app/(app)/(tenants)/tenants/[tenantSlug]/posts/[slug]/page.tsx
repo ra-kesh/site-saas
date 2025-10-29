@@ -14,7 +14,13 @@ import { PostHero } from '@/heros/PostHero'
 import RichText from '@/components/RichText'
 import { RelatedPosts } from '@/blocks/RelatedPosts/Component'
 import { generateMeta } from "@/utilities/generateMeta";
-import { extractTenantId, generateTenantContentPath } from "@/lib/utils";
+import {
+  extractSiteId,
+  extractTenantId,
+  generateTenantContentPath,
+  type SiteReference,
+  type TenantReference,
+} from "@/lib/utils";
 import { getTenantPost } from "@/modules/tenants/data/getTenantPost";
 
 type PageParams = Promise<{
@@ -25,6 +31,14 @@ type PageParams = Promise<{
 type PostDoc = Post
 
 export const dynamic = "force-static";
+
+const getRelation = <Key extends "site" | "tenant">(
+  doc: unknown,
+  key: Key
+) =>
+  doc && typeof doc === "object" && key in doc
+    ? (doc as Record<Key, unknown>)[key]
+    : undefined;
 
 export default async function TenantPostPage({ params }: { params: PageParams }) {
   const { isEnabled: draft } = await draftMode();
@@ -65,10 +79,26 @@ export default async function TenantPostPage({ params }: { params: PageParams })
     );
   }
 
+  const currentSiteId =
+    extractSiteId(getRelation(post, "site") as SiteReference) ??
+    extractTenantId(getRelation(post, "tenant") as TenantReference) ??
+    tenantDoc.id;
+
   const relatedPosts =
     post.relatedPosts?.filter((related): related is PostDoc => {
       if (typeof related !== "object" || related === null) return false;
-      const relatedTenantId = extractTenantId(related.tenant);
+      const relatedSiteId = extractSiteId(
+        getRelation(related, "site") as SiteReference
+      );
+
+      if (relatedSiteId && currentSiteId) {
+        return relatedSiteId === currentSiteId;
+      }
+
+      const relatedTenantId = extractTenantId(
+        getRelation(related, "tenant") as TenantReference
+      );
+
       return !relatedTenantId || relatedTenantId === tenantDoc.id;
     }) ?? [];
 

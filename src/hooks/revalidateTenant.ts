@@ -6,32 +6,64 @@ import type {
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import type { Tenant } from "@/payload-types";
-import { generateTenantContentPath } from "@/lib/utils";
+import { generateSiteContentPath } from "@/lib/utils";
 
-const revalidateTenantSlug = ({
-  payload,
-  slug,
-}: {
-  payload: Parameters<CollectionAfterChangeHook<Tenant>>[0]["req"]["payload"];
+type PayloadType = Parameters<CollectionAfterChangeHook<Tenant>>[0]["req"]["payload"];
+
+type SiteRecord = {
   slug?: string | null;
-}) => {
-  if (!slug) return;
-
-  const homePath = generateTenantContentPath({
-    tenantSlug: slug,
-    slug: "home",
-    includeTenantPrefix: true,
-  });
-
-  payload.logger.info(`Revalidating tenant cache for slug: ${slug}`);
-
-  revalidatePath(homePath);
-  revalidateTag(`tenant:${slug}`, "max");
 };
 
-export const revalidateTenant: CollectionAfterChangeHook<Tenant> = ({
+const revalidateAssociatedSites = async ({
+  payload,
+  tenantId,
+}: {
+  payload: PayloadType;
+  tenantId?: string | null;
+}) => {
+  if (!tenantId || !payload) {
+    return;
+  }
+
+  try {
+    const sites = await payload.find({
+      collection: "sites",
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      where: {
+        tenant: {
+          equals: tenantId,
+        },
+      },
+    });
+
+    for (const site of sites.docs as SiteRecord[]) {
+      if (!site?.slug) continue;
+
+      const homePath = generateSiteContentPath({
+        siteSlug: site.slug,
+        slug: "home",
+        includeSitePrefix: true,
+      });
+
+      payload.logger.info(
+        `Revalidating site cache for tenant "${tenantId}" and site "${site.slug}"`
+      );
+
+      revalidatePath(homePath);
+      revalidateTag(`site:${site.slug}`, "max");
+    }
+  } catch (error) {
+    payload.logger.warn({
+      err: error,
+      message: `Unable to revalidate sites for tenant "${tenantId}"`,
+    });
+  }
+};
+
+export const revalidateTenant: CollectionAfterChangeHook<Tenant> = async ({
   doc,
-  previousDoc,
   req: { payload, context },
 }) => {
   if (context.disableRevalidate) {
@@ -39,17 +71,17 @@ export const revalidateTenant: CollectionAfterChangeHook<Tenant> = ({
   }
 
   revalidateTag("tenants", "max");
+  revalidateTag("sites", "max");
 
-  revalidateTenantSlug({ payload, slug: doc.slug });
-
-  if (previousDoc?.slug && previousDoc.slug !== doc.slug) {
-    revalidateTenantSlug({ payload, slug: previousDoc.slug });
-  }
+  await revalidateAssociatedSites({
+    payload,
+    tenantId: doc.id,
+  });
 
   return doc;
 };
 
-export const revalidateTenantDelete: CollectionAfterDeleteHook<Tenant> = ({
+export const revalidateTenantDelete: CollectionAfterDeleteHook<Tenant> = async ({
   doc,
   req: { payload, context },
 }) => {
@@ -58,7 +90,12 @@ export const revalidateTenantDelete: CollectionAfterDeleteHook<Tenant> = ({
   }
 
   revalidateTag("tenants", "max");
-  revalidateTenantSlug({ payload, slug: doc?.slug });
+  revalidateTag("sites", "max");
+
+  await revalidateAssociatedSites({
+    payload,
+    tenantId: doc?.id,
+  });
 
   return doc;
 };

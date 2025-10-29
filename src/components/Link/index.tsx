@@ -1,5 +1,11 @@
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { extractTenantSlug, generateTenantContentPath } from "@/lib/utils";
+import {
+  extractSiteSlug,
+  extractTenantSlug,
+  generateSiteContentPath,
+  type SiteReference,
+  type TenantReference,
+} from "@/lib/utils";
 import { cn } from "@/utilities/ui";
 import Link from "next/link";
 import React from "react";
@@ -42,13 +48,19 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
     typeof reference.value === "object"
   ) {
     const doc = reference.value as Page | Post;
-    const tenantSlug = doc.tenant ? extractTenantSlug(doc.tenant) : undefined;
+    const siteSlug = doc.site
+      ? extractSiteSlug(doc.site as SiteReference)
+      : undefined;
+    const tenantSlug =
+      typeof doc === "object" && doc !== null && "tenant" in doc
+        ? extractTenantSlug((doc as { tenant?: TenantReference }).tenant)
+        : undefined;
     const docSlug = typeof doc.slug === "string" ? doc.slug : undefined;
 
-    href = generateTenantContentPath({
+    href = generateSiteContentPath({
       collection: reference.relationTo,
       slug: docSlug,
-      tenantSlug,
+      siteSlug: siteSlug ?? tenantSlug,
     });
   } else if (url) {
     href = url;

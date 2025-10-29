@@ -77,7 +77,7 @@ export default async function TenantPage({ params }: { params: PageParams }) {
         <PayloadRedirects disableNotFound url={urlPath} />
         {draft && <LivePreviewListener />}
         <RenderHero {...hero} />
-        <RenderBlocks blocks={layout} tenant={tenantDoc} />
+        <RenderBlocks blocks={layout} site={page.site} tenant={tenantDoc} />
       </article>
       <Footer />
     </>

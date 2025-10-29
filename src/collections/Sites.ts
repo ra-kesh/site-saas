@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { isSuperAdmin } from "@/lib/access";
+import { revalidateSite, revalidateSiteDelete } from "@/hooks/revalidateSite";
 
 const RESERVED_SITE_SLUGS = new Set([
   "app",
@@ -35,6 +36,10 @@ export const Sites: CollectionConfig = {
     create: ({ req }) => isSuperAdmin(req.user),
     update: ({ req }) => isSuperAdmin(req.user),
     delete: ({ req }) => isSuperAdmin(req.user),
+  },
+  hooks: {
+    afterChange: [revalidateSite],
+    afterDelete: [revalidateSiteDelete],
   },
   admin: {
     defaultColumns: ["name", "tenant", "slug", "status"],
@@ -75,7 +80,7 @@ export const Sites: CollectionConfig = {
         description:
           "Used for subdomains and routing (e.g. [slug].example.com).",
       },
-      validate: (value) => validateSiteSlug(value),
+      validate: (value: unknown) => validateSiteSlug(value),
     },
     {
       name: "status",

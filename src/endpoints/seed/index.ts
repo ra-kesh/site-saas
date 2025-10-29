@@ -148,7 +148,7 @@ export const seedTenant = async ({
           tenant: tenantId,
           title,
           slug: `${toSlug(title)}-${tenantSlug}`,
-        },
+        } as any,
       }),
     ),
   )

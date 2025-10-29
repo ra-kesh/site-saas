@@ -3,9 +3,23 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import type { Page } from "../../../payload-types";
-import { extractTenantSlug, generateTenantContentPath } from "@/lib/utils";
+import {
+  extractSiteSlug,
+  extractTenantSlug,
+  generateSiteContentPath,
+  type SiteReference,
+  type TenantReference,
+} from "@/lib/utils";
 
-const revalidateTenantTags = ({
+const resolveLegacyTenant = (doc: unknown): TenantReference => {
+  if (doc && typeof doc === "object" && "tenant" in doc) {
+    return (doc as { tenant?: TenantReference }).tenant as TenantReference;
+  }
+
+  return undefined;
+};
+
+const revalidateSiteTags = ({
   doc,
   slug,
 }: {
@@ -14,27 +28,33 @@ const revalidateTenantTags = ({
 }) => {
   if (!doc) return;
 
-  const tenantSlug = extractTenantSlug(doc.tenant ?? undefined);
+  const siteRelation = doc?.site as SiteReference | undefined;
+  const siteSlug =
+    (siteRelation ? extractSiteSlug(siteRelation as SiteReference) : undefined) ??
+    extractTenantSlug(resolveLegacyTenant(doc));
 
-  if (tenantSlug) {
-    revalidateTag(`tenant:${tenantSlug}`, "max");
+  if (siteSlug) {
+    revalidateTag(`site:${siteSlug}`, "max");
     if (slug) {
-      revalidateTag(`tenant:${tenantSlug}:page:${slug}`, "max");
+      revalidateTag(`site:${siteSlug}:page:${slug}`, "max");
     }
   }
 };
 
 const getPagePath = (doc?: Page | null) => {
-  const tenantSlug = extractTenantSlug(doc?.tenant ?? undefined);
+  const siteRelation = doc?.site as SiteReference | undefined;
+  const siteSlug =
+    (siteRelation ? extractSiteSlug(siteRelation as SiteReference) : undefined) ??
+    extractTenantSlug(resolveLegacyTenant(doc));
   const slugValue = Array.isArray(doc?.slug)
     ? doc?.slug.filter(Boolean).join("/")
     : doc?.slug;
 
-  return generateTenantContentPath({
+  return generateSiteContentPath({
     collection: "pages",
     slug: slugValue,
-    tenantSlug,
-    includeTenantPrefix: true,
+    siteSlug,
+    includeSitePrefix: true,
   });
 };
 
@@ -52,8 +72,8 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
       revalidatePath(path);
       revalidateTag("pages-sitemap", "max");
       revalidateTag("pages", "max");
-      revalidateTag("tenants", "max");
-      revalidateTenantTags({ doc, slug: doc.slug });
+      revalidateTag("sites", "max");
+      revalidateSiteTags({ doc, slug: doc.slug });
     }
 
     // If the page was previously published, we need to revalidate the old path
@@ -65,8 +85,8 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
       revalidatePath(oldPath);
       revalidateTag("pages-sitemap", "max");
       revalidateTag("pages", "max");
-      revalidateTag("tenants", "max");
-      revalidateTenantTags({ doc: previousDoc, slug: previousDoc.slug });
+      revalidateTag("sites", "max");
+      revalidateSiteTags({ doc: previousDoc, slug: previousDoc.slug });
     }
   }
   return doc;
@@ -78,8 +98,8 @@ export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req: { 
     revalidatePath(path);
     revalidateTag("pages-sitemap", "max");
     revalidateTag("pages", "max");
-    revalidateTag("tenants", "max");
-    revalidateTenantTags({ doc, slug: doc?.slug });
+    revalidateTag("sites", "max");
+    revalidateSiteTags({ doc, slug: doc?.slug });
   }
 
   return doc;

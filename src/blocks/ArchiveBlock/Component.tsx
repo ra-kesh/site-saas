@@ -1,4 +1,4 @@
-import type { Post, ArchiveBlock as ArchiveBlockProps, Tenant } from '@/payload-types'
+import type { Category, Post, ArchiveBlock as ArchiveBlockProps, Site, Tenant } from '@/payload-types'
 
 import configPromise from '@payload-config'
 import { getPayload, type Where } from 'payload'
@@ -6,27 +6,38 @@ import React from 'react'
 import RichText from '@/components/RichText'
 
 import { CollectionArchive } from '@/components/CollectionArchive'
-import { extractTenantId } from '@/lib/utils'
+import { extractSiteId, extractTenantId, type TenantReference } from '@/lib/utils'
 
 export const ArchiveBlock: React.FC<
   ArchiveBlockProps & {
     id?: string
+    site?: Site | string | null
     tenant?: Tenant | string
   }
 > = async (props) => {
-  const { id, categories, introContent, limit: limitFromProps, populateBy, selectedDocs, tenant } = props
+  const {
+    id,
+    categories,
+    introContent,
+    limit: limitFromProps,
+    populateBy,
+    selectedDocs,
+    site,
+    tenant,
+  } = props
 
   const limit = limitFromProps || 3
 
   let posts: Post[] = []
-  const tenantId = extractTenantId(tenant)
+  const siteId = site ? extractSiteId(site) : undefined
+  const tenantId = extractTenantId(tenant as TenantReference)
 
   if (populateBy === 'collection') {
     const payload = await getPayload({ config: configPromise })
 
     const flattenedCategories = categories?.map((category) => {
       if (typeof category === 'object') return category.id
-      else return category
+      return category
     })
 
     const where = {
@@ -37,10 +48,10 @@ export const ArchiveBlock: React.FC<
             },
           }
         : {}),
-      ...(tenantId
+      ...(siteId
         ? {
-            tenant: {
-              equals: tenantId,
+            site: {
+              equals: siteId,
             },
           }
         : {}),
@@ -63,14 +74,48 @@ export const ArchiveBlock: React.FC<
         })
         .filter((post): post is Post => {
           if (!post) return false
+          if (siteId) {
+            const postSiteId = extractSiteId(post.site)
+
+            if (postSiteId) {
+              return postSiteId === siteId
+            }
+          }
+
           if (!tenantId) return true
-          const postTenantId = extractTenantId(post.tenant)
+
+          const postTenantId =
+            typeof post === 'object' && post !== null && 'tenant' in post
+              ? extractTenantId((post as unknown as { tenant?: TenantReference }).tenant)
+              : undefined
+
           return !postTenantId || postTenantId === tenantId
         })
 
       posts = filteredSelectedPosts
     }
   }
+
+  const toCardPostData = (post: Post) => {
+    const baseCategories = post.categories?.map((category) => {
+      if (typeof category === 'object') return category
+      return category
+    }) as (Category | string)[] | undefined
+
+    return {
+      slug: post.slug,
+      categories: baseCategories,
+      meta: post.meta,
+      title: post.title,
+      site: post.site ?? null,
+      tenant:
+        typeof post === 'object' && post !== null && 'tenant' in post
+          ? (post as unknown as { tenant?: TenantReference }).tenant
+          : undefined,
+    }
+  }
+
+  const cardPosts = posts.map(toCardPostData)
 
   return (
     <div className="my-16" id={`block-${id}`}>
@@ -79,7 +124,7 @@ export const ArchiveBlock: React.FC<
           <RichText className="ms-0 max-w-[48rem]" data={introContent} enableGutter={false} />
         </div>
       )}
-      <CollectionArchive posts={posts} />
+      <CollectionArchive posts={cardPosts} />
     </div>
   )
 }
