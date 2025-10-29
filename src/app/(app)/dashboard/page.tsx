@@ -41,21 +41,23 @@ export default function DashboardPage() {
 
   const sessionQuery = useQuery(trpc.auth.session.queryOptions());
   const sessionUserId = sessionQuery.data?.user?.id;
-  const tenantQueryOptions = useMemo(
-    () => trpc.tenants.getCurrent.queryOptions(),
+  const currentSiteQueryOptions = useMemo(
+    () => trpc.tenants.getCurrentSite.queryOptions(),
     [trpc]
   );
-  const tenantQueryKey = useMemo(
-    () => trpc.tenants.getCurrent.queryKey(),
+  const currentSiteQueryKey = useMemo(
+    () => trpc.tenants.getCurrentSite.queryKey(),
     [trpc]
   );
-  const tenantQuery = useQuery({
-    ...tenantQueryOptions,
+  const siteContextQuery = useQuery({
+    ...currentSiteQueryOptions,
     enabled: Boolean(sessionUserId),
   });
 
-  const tenant = tenantQuery.data;
-  const isLoading = sessionQuery.isLoading || tenantQuery.isLoading;
+  const siteContext = siteContextQuery.data;
+  const site = siteContext?.site ?? null;
+  const tenant = siteContext?.tenant ?? null;
+  const isLoading = sessionQuery.isLoading || siteContextQuery.isLoading;
 
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [businessName, setBusinessName] = useState("");
@@ -66,8 +68,8 @@ export default function DashboardPage() {
   const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    queryClient.setQueryData(tenantQueryKey, undefined);
-  }, [queryClient, tenantQueryKey]);
+    queryClient.setQueryData(currentSiteQueryKey, undefined);
+  }, [queryClient, currentSiteQueryKey]);
 
   useEffect(() => {
     const currentUserId = sessionUserId ?? null;
@@ -75,23 +77,23 @@ export default function DashboardPage() {
 
     if (!currentUserId) {
       if (previousUserId) {
-        queryClient.removeQueries({ queryKey: tenantQueryKey });
+        queryClient.removeQueries({ queryKey: currentSiteQueryKey });
         previousUserIdRef.current = null;
       }
       return;
     }
 
     if (previousUserId && previousUserId !== currentUserId) {
-      queryClient.setQueryData(tenantQueryKey, undefined);
-      queryClient.invalidateQueries({ queryKey: tenantQueryKey });
+      queryClient.setQueryData(currentSiteQueryKey, undefined);
+      queryClient.invalidateQueries({ queryKey: currentSiteQueryKey });
     }
 
     previousUserIdRef.current = currentUserId;
-  }, [queryClient, sessionUserId, tenantQueryKey]);
+  }, [queryClient, sessionUserId, currentSiteQueryKey]);
 
   const generateSite = useMutation({
     mutationFn: async (input: {
-      tenantSlug: string;
+      siteSlug: string;
       business: {
         name: string;
         description: string;
@@ -121,7 +123,7 @@ export default function DashboardPage() {
         "Template generated! Visit your site or open the admin to keep editing."
       );
       setIsGenerateOpen(false);
-      void tenantQuery.refetch();
+      void siteContextQuery.refetch();
     },
     onError: (error) => {
       toast.error(
@@ -137,19 +139,19 @@ export default function DashboardPage() {
       return;
     }
 
-    if (!tenant) {
+    if (!site) {
       router.replace("/");
     }
-  }, [isLoading, tenant, router]);
+  }, [isLoading, site, router]);
 
   useEffect(() => {
-    if (tenant?.name) {
-      setBusinessName(tenant.name);
+    if (site?.name) {
+      setBusinessName(site.name);
       return;
     }
 
     setBusinessName("");
-  }, [tenant?.name]);
+  }, [site?.name]);
 
   if (isLoading || !tenant) {
     return (
@@ -161,8 +163,11 @@ export default function DashboardPage() {
   }
 
   const welcomeName = sessionQuery.data?.user?.email ?? "there";
-  const displayDomain = `https://${tenant.slug}.${ROOT_DOMAIN}`;
-  const hasSeeded = Boolean(tenant.hasSeeded);
+  const siteSlug = site?.slug ?? tenant?.slug ?? "";
+  const displayDomain = siteSlug
+    ? `https://${siteSlug}.${ROOT_DOMAIN}`
+    : `https://${ROOT_DOMAIN}`;
+  const hasSeeded = Boolean(siteContext?.hasSeeded);
 
   return (
     <div className="space-y-6">
@@ -177,7 +182,7 @@ export default function DashboardPage() {
 
       <Card className="max-w-xl">
         <CardHeader>
-          <CardTitle>{tenant.name ?? tenant.slug}</CardTitle>
+          <CardTitle>{site?.name ?? siteSlug}</CardTitle>
           <CardDescription className="text-base text-foreground">
             <Link
               href={displayDomain}
@@ -269,8 +274,24 @@ export default function DashboardPage() {
               }
 
               setFormError(null);
+              if (!siteSlug) {
+                setFormError(
+                  "We couldn't determine your site slug. Please contact support."
+                );
+                return;
+              }
+
+              const targetSlug = siteSlug;
+
+              if (!targetSlug) {
+                setFormError(
+                  "We couldn't determine your site slug. Please contact support."
+                );
+                return;
+              }
+
               generateSite.mutate({
-                tenantSlug: tenant.slug,
+                siteSlug: targetSlug,
                 business: {
                   name: trimmedName,
                   description: trimmedDescription,

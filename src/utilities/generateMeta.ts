@@ -1,11 +1,16 @@
 import type { Metadata } from 'next'
 
 import type { Media, Page, Post, Config } from '../payload-types'
-import type { TenantReference } from '@/lib/utils'
 
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { getServerSideURL } from './getURL'
-import { extractTenantSlug, generateTenantContentPath } from '@/lib/utils'
+import {
+  extractSiteSlug,
+  extractTenantSlug,
+  generateSiteContentPath,
+  type SiteReference,
+  type TenantReference,
+} from '@/lib/utils'
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'Sites of Puri'
 
@@ -41,11 +46,13 @@ export const generateMeta = async (args: {
 
   const title = doc?.meta?.title ? `${doc.meta.title} | ${APP_NAME}` : APP_NAME
 
+  const siteSlug =
+    doc && typeof doc === 'object' && 'site' in doc
+      ? extractSiteSlug((doc as Page | Post).site as SiteReference)
+      : undefined
   const tenantSlug =
     doc && typeof doc === 'object' && 'tenant' in doc
-      ? extractTenantSlug(
-          (doc as Page | Post).tenant as TenantReference
-        )
+      ? extractTenantSlug((doc as { tenant?: TenantReference }).tenant)
       : undefined
 
   const rawSlug = doc?.slug as unknown
@@ -60,10 +67,10 @@ export const generateMeta = async (args: {
   const collection: 'pages' | 'posts' =
     doc && typeof doc === 'object' && 'layout' in doc ? 'pages' : 'posts'
 
-  const path = generateTenantContentPath({
+  const path = generateSiteContentPath({
     collection,
     slug: slugValue,
-    tenantSlug,
+    siteSlug: siteSlug ?? tenantSlug,
   })
 
   const serverURL = getServerSideURL()

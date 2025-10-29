@@ -3,9 +3,23 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import type { Post } from "../../../payload-types";
-import { extractTenantSlug, generateTenantContentPath } from "@/lib/utils";
+import {
+  extractSiteSlug,
+  extractTenantSlug,
+  generateSiteContentPath,
+  type SiteReference,
+  type TenantReference,
+} from "@/lib/utils";
 
-const revalidateTenantPostTags = ({
+const resolveLegacyTenant = (doc: unknown): TenantReference => {
+  if (doc && typeof doc === "object" && "tenant" in doc) {
+    return (doc as { tenant?: TenantReference }).tenant as TenantReference;
+  }
+
+  return undefined;
+};
+
+const revalidateSitePostTags = ({
   doc,
   slug,
 }: {
@@ -14,27 +28,33 @@ const revalidateTenantPostTags = ({
 }) => {
   if (!doc) return;
 
-  const tenantSlug = extractTenantSlug(doc.tenant ?? undefined);
+  const siteRelation = doc?.site as SiteReference | undefined;
+  const siteSlug =
+    (siteRelation ? extractSiteSlug(siteRelation as SiteReference) : undefined) ??
+    extractTenantSlug(resolveLegacyTenant(doc));
 
-  if (tenantSlug) {
-    revalidateTag(`tenant:${tenantSlug}`, "max");
+  if (siteSlug) {
+    revalidateTag(`site:${siteSlug}`, "max");
     if (slug) {
-      revalidateTag(`tenant:${tenantSlug}:post:${slug}`, "max");
+      revalidateTag(`site:${siteSlug}:post:${slug}`, "max");
     }
   }
 };
 
 const getPostPath = (doc?: Post | null) => {
-  const tenantSlug = extractTenantSlug(doc?.tenant ?? undefined);
+  const siteRelation = doc?.site as SiteReference | undefined;
+  const siteSlug =
+    (siteRelation ? extractSiteSlug(siteRelation as SiteReference) : undefined) ??
+    extractTenantSlug(resolveLegacyTenant(doc));
   const slugValue = Array.isArray(doc?.slug)
     ? doc?.slug.filter(Boolean).join("/")
     : doc?.slug;
 
-  return generateTenantContentPath({
+  return generateSiteContentPath({
     collection: "posts",
     slug: slugValue,
-    tenantSlug,
-    includeTenantPrefix: true,
+    siteSlug,
+    includeSitePrefix: true,
   });
 };
 
@@ -52,8 +72,8 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
       revalidatePath(path);
       revalidateTag("posts-sitemap", "max");
       revalidateTag("posts", "max");
-      revalidateTag("tenants", "max");
-      revalidateTenantPostTags({ doc, slug: doc.slug });
+      revalidateTag("sites", "max");
+      revalidateSitePostTags({ doc, slug: doc.slug });
     }
 
     // If the post was previously published, we need to revalidate the old path
@@ -65,8 +85,8 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
       revalidatePath(oldPath);
       revalidateTag("posts-sitemap", "max");
       revalidateTag("posts", "max");
-      revalidateTag("tenants", "max");
-      revalidateTenantPostTags({ doc: previousDoc, slug: previousDoc.slug });
+      revalidateTag("sites", "max");
+      revalidateSitePostTags({ doc: previousDoc, slug: previousDoc.slug });
     }
   }
   return doc;
@@ -79,8 +99,8 @@ export const revalidateDelete: CollectionAfterDeleteHook<Post> = ({ doc, req: { 
     revalidatePath(path);
     revalidateTag("posts-sitemap", "max");
     revalidateTag("posts", "max");
-    revalidateTag("tenants", "max");
-    revalidateTenantPostTags({ doc, slug: doc?.slug });
+    revalidateTag("sites", "max");
+    revalidateSitePostTags({ doc, slug: doc?.slug });
   }
 
   return doc;

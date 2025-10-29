@@ -14,41 +14,56 @@ import { PostHero } from '@/heros/PostHero'
 import RichText from '@/components/RichText'
 import { RelatedPosts } from '@/blocks/RelatedPosts/Component'
 import { generateMeta } from "@/utilities/generateMeta";
-import { extractTenantId, generateTenantContentPath } from "@/lib/utils";
-import { getTenantPost } from "@/modules/tenants/data/getTenantPost";
+import {
+  extractSiteId,
+  extractTenantId,
+  generateSiteContentPath,
+  type SiteReference,
+  type TenantReference,
+} from "@/lib/utils";
+import { getSitePost } from "@/modules/tenants/data/getSitePost";
 
 type PageParams = Promise<{
   slug: string
-  tenantSlug: string
+  siteSlug: string
 }>
 
 type PostDoc = Post
 
 export const dynamic = "force-static";
 
-export default async function TenantPostPage({ params }: { params: PageParams }) {
-  const { isEnabled: draft } = await draftMode();
-  const { tenantSlug, slug } = await params;
+const getRelation = <Key extends "site" | "tenant">(
+  doc: unknown,
+  key: Key
+) =>
+  doc && typeof doc === "object" && key in doc
+    ? (doc as Record<Key, unknown>)[key]
+    : undefined;
 
-  const decodedTenantSlug = decodeURIComponent(tenantSlug);
+export default async function SitePostPage({ params }: { params: PageParams }) {
+  const { isEnabled: draft } = await draftMode();
+  const { siteSlug, slug } = await params;
+
+  const decodedSiteSlug = decodeURIComponent(siteSlug);
   const decodedSlug = decodeURIComponent(slug);
 
-  const { tenant, post } = await getTenantPost({
+  const { tenant, site, post } = await getSitePost({
     draft,
     postSlug: decodedSlug,
-    tenantSlug: decodedTenantSlug,
+    siteSlug: decodedSiteSlug,
   });
 
-  if (!tenant) {
+  if (!site) {
     notFound();
   }
 
-  const tenantDoc = tenant;
+  const tenantDoc = tenant ?? undefined;
 
-  const urlPath = generateTenantContentPath({
+  const urlPath = generateSiteContentPath({
     collection: "posts",
     slug: decodedSlug,
-    tenantSlug: tenantDoc.slug,
+    siteSlug: decodedSiteSlug,
+    includeSitePrefix: true,
   });
 
   if (!post) {
@@ -65,11 +80,27 @@ export default async function TenantPostPage({ params }: { params: PageParams })
     );
   }
 
+  const currentSiteId =
+    extractSiteId(getRelation(post, "site") as SiteReference) ??
+    extractTenantId(getRelation(post, "tenant") as TenantReference) ??
+    tenantDoc?.id;
+
   const relatedPosts =
     post.relatedPosts?.filter((related): related is PostDoc => {
       if (typeof related !== "object" || related === null) return false;
-      const relatedTenantId = extractTenantId(related.tenant);
-      return !relatedTenantId || relatedTenantId === tenantDoc.id;
+      const relatedSiteId = extractSiteId(
+        getRelation(related, "site") as SiteReference
+      );
+
+      if (relatedSiteId && currentSiteId) {
+        return relatedSiteId === currentSiteId;
+      }
+
+      const relatedTenantId = extractTenantId(
+        getRelation(related, "tenant") as TenantReference
+      );
+
+      return !relatedTenantId || (!!tenantDoc && relatedTenantId === tenantDoc.id);
     }) ?? [];
 
   return (
@@ -98,19 +129,19 @@ export default async function TenantPostPage({ params }: { params: PageParams })
 }
 
 export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
-  const { tenantSlug, slug } = await params;
+  const { siteSlug, slug } = await params;
   const { isEnabled: draft } = await draftMode();
 
-  const decodedTenantSlug = decodeURIComponent(tenantSlug);
+  const decodedSiteSlug = decodeURIComponent(siteSlug);
   const decodedSlug = decodeURIComponent(slug);
 
-  const { tenant, post } = await getTenantPost({
+  const { site, post } = await getSitePost({
     draft,
     postSlug: decodedSlug,
-    tenantSlug: decodedTenantSlug,
+    siteSlug: decodedSiteSlug,
   });
 
-  if (!tenant) {
+  if (!site) {
     notFound();
   }
 

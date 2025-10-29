@@ -1,7 +1,7 @@
 import React, { Fragment } from "react";
 
-import type { Page, Tenant } from "@/payload-types";
-import type { TenantReference } from "@/lib/utils";
+import type { Page, Site, Tenant } from "@/payload-types";
+import type { SiteReference, TenantReference } from "@/lib/utils";
 
 import { ArchiveBlock } from "@/blocks/ArchiveBlock/Component";
 import { CallToActionBlock } from "@/blocks/CallToAction/Component";
@@ -19,9 +19,10 @@ const blockComponents = {
 
 export const RenderBlocks: React.FC<{
   blocks: Page["layout"][0][];
+  site?: Site | SiteReference | null;
   tenant?: Tenant | TenantReference;
 }> = (props) => {
-  const { blocks, tenant } = props;
+  const { blocks, site, tenant } = props;
 
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
 
@@ -32,13 +33,17 @@ export const RenderBlocks: React.FC<{
           const { blockType } = block;
 
           if (blockType && blockType in blockComponents) {
-            const Block = blockComponents[blockType];
+            const BlockComponent = blockComponents[blockType] as React.FC<Record<string, unknown>>;
 
-            if (Block) {
+            if (BlockComponent) {
               return (
                 <div className="my-16" key={index}>
-                  {/* @ts-expect-error there may be some mismatch between the expected types here */}
-                  <Block {...block} disableInnerContainer tenant={tenant} />
+                  <BlockComponent
+                    {...block}
+                    disableInnerContainer
+                    site={site}
+                    tenant={tenant}
+                  />
                 </div>
               );
             }

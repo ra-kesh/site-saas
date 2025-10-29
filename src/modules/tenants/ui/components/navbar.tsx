@@ -8,7 +8,7 @@ import type { Media, Tenant } from "@/payload-types";
 import { getMediaUrl } from "@/utilities/getMediaUrl";
 
 interface Props {
-  tenant: Tenant;
+  tenant?: Tenant | null;
 }
 
 const getImageUrl = (image: Tenant["image"]) => {
@@ -34,23 +34,25 @@ const getImageUrl = (image: Tenant["image"]) => {
 };
 
 export const Navbar = ({ tenant }: Props) => {
-  const tenantUrl = generateTenantURL(tenant.slug);
-  const imageUrl = getImageUrl(tenant.image);
+  const tenantSlug = tenant?.slug ?? "";
+  const tenantName = tenant?.name ?? (tenantSlug || "Your site");
+  const tenantUrl = tenantSlug ? generateTenantURL(tenantSlug) : "#";
+  const imageUrl = tenant ? getImageUrl(tenant.image) : null;
 
   return (
     <nav className="h-20 border-b font-medium bg-white">
       <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 lg:px-12">
-        <Link href={tenantUrl} className="flex items-center gap-2">
+        <Link href={tenantUrl} className="flex items-center gap-2" prefetch={false}>
           {imageUrl && (
             <Image
               src={imageUrl}
               width={32}
               height={32}
               className="rounded-full border shrink-0 size-[32px]"
-              alt={tenant.slug}
+              alt={tenantSlug || tenantName}
             />
           )}
-          <p className="text-xl">{tenant.name}</p>
+          <p className="text-xl">{tenantName}</p>
         </Link>
       </div>
     </nav>

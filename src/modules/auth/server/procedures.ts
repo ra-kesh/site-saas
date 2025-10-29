@@ -46,13 +46,25 @@ export const authRouter = createTRPCRouter({
       //   });
       // }
 
+      const normalizedSlug = input.sitename.trim().toLowerCase();
+
       const tenant = await ctx.db.create({
         collection: "tenants",
         data: {
           name: input.sitename,
-          slug: input.sitename,
+          slug: normalizedSlug,
           status: "pending",
           // stripeAccountId: account.id,
+        },
+      });
+
+      const site = await ctx.db.create({
+        collection: "sites",
+        data: {
+          name: input.sitename,
+          slug: normalizedSlug,
+          status: "draft",
+          tenant: tenant.id,
         },
       });
 
@@ -67,8 +79,13 @@ export const authRouter = createTRPCRouter({
               tenant: tenant.id,
             },
           ],
+          sites: [
+            {
+              site: site.id,
+            },
+          ],
         },
-      });
+      } as any);
 
       const data = await ctx.db.login({
         collection: "users",
@@ -93,6 +110,8 @@ export const authRouter = createTRPCRouter({
       return {
         tenantId: tenant.id,
         tenantSlug: tenant.slug,
+        siteId: site.id,
+        siteSlug: site.slug,
         status: "pending" as const,
       };
     }),

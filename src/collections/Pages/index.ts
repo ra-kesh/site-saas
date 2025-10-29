@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { activeTenantOnly } from "../../access/activeTenant";
+import { activeSiteOnly } from "../../access/activeSite";
 import { authenticatedOrPublished } from "../../access/authenticatedOrPublished";
 import { Archive } from "../../blocks/ArchiveBlock/config";
 import { CallToAction } from "../../blocks/CallToAction/config";
@@ -25,10 +25,10 @@ import {
 export const Pages: CollectionConfig<"pages"> = {
   slug: "pages",
   access: {
-    create: activeTenantOnly,
-    delete: activeTenantOnly,
+    create: activeSiteOnly,
+    delete: activeSiteOnly,
     read: authenticatedOrPublished,
-    update: activeTenantOnly,
+    update: activeSiteOnly,
   },
   // This config controls what's populated by default when a page is referenced
   // https://payloadcms.com/docs/queries/select#defaultpopulate-collection-config-property
@@ -36,10 +36,10 @@ export const Pages: CollectionConfig<"pages"> = {
   defaultPopulate: {
     title: true,
     slug: true,
-    tenant: true,
+    site: true,
   },
   admin: {
-    defaultColumns: ["title", "tenant", "slug", "updatedAt"],
+    defaultColumns: ["title", "site", "slug", "updatedAt"],
     livePreview: {
       url: async ({ data, req }) =>
         await generatePreviewPath({
@@ -144,7 +144,7 @@ export const Pages: CollectionConfig<"pages"> = {
   },
   indexes: [
     {
-      fields: ["slug", "tenant"],
+      fields: ["slug", "site"],
       unique: true,
     },
   ],

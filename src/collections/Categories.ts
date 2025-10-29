@@ -1,16 +1,16 @@
 import type { CollectionConfig } from 'payload'
 
 import { anyone } from '../access/anyone'
-import { activeTenantOnly } from '../access/activeTenant'
+import { activeSiteOnly } from '../access/activeSite'
 import { slugField } from 'payload'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
   access: {
-    create: activeTenantOnly,
-    delete: activeTenantOnly,
+    create: activeSiteOnly,
+    delete: activeSiteOnly,
     read: anyone,
-    update: activeTenantOnly,
+    update: activeSiteOnly,
   },
   admin: {
     useAsTitle: 'title',

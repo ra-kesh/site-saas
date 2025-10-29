@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     tenants: Tenant;
+    sites: Site;
     pages: Page;
     posts: Post;
     categories: Category;
@@ -86,6 +87,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     tenants: TenantsSelect<false> | TenantsSelect<true>;
+    sites: SitesSelect<false> | SitesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
@@ -143,6 +145,15 @@ export interface User {
   id: string;
   sitename: string;
   roles?: ('super-admin' | 'user')[] | null;
+  sites?:
+    | {
+        site: string | Site;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Legacy tenant memberships. New access is managed via Sites.
+   */
   tenants?:
     | {
         tenant: string | Tenant;
@@ -168,6 +179,53 @@ export interface User {
   password?: string | null;
 }
 /**
+ * Sites belong to tenants. Each site can have its own pages, posts, and branding.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites".
+ */
+export interface Site {
+  id: string;
+  /**
+   * Choose which tenant owns this site. Tenants can manage multiple sites.
+   */
+  tenant: string | Tenant;
+  /**
+   * Public-facing name shown in navigation and metadata.
+   */
+  name: string;
+  /**
+   * Used for subdomains and routing (e.g. [slug].example.com).
+   */
+  slug: string;
+  /**
+   * Only active sites are exposed publicly. Draft sites stay internal until ready.
+   */
+  status: 'draft' | 'active' | 'suspended' | 'archived';
+  /**
+   * Internal notes about this site. Use this to track vertical, launch dates, etc.
+   */
+  description?: string | null;
+  /**
+   * Optional branding controls to customize navigation and marketing components.
+   */
+  branding?: {
+    logo?: (string | null) | Media;
+    /**
+     * Hex color (e.g. #0040FF).
+     */
+    primaryColor?: string | null;
+    /**
+     * Hex color used for accents.
+     */
+    secondaryColor?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Tenants represent customer accounts (billing, ownership, and shared settings). Sites will reference the tenant that owns them.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tenants".
  */
@@ -178,7 +236,7 @@ export interface Tenant {
    */
   name: string;
   /**
-   * This is the subdomain for the store (e.g. [slug].example.com)
+   * Legacy tenant slug used for backwards compatibility. Sites will own routing in future phases.
    */
   slug: string;
   image?: (string | null) | Media;
@@ -186,6 +244,27 @@ export interface Tenant {
    * Controls onboarding progress. Pending tenants see the dashboard checklist until they subscribe.
    */
   status: 'pending' | 'draft' | 'active' | 'suspended';
+  /**
+   * Metadata about the organization that owns this account. These values never surface on public sites.
+   */
+  account?: {
+    /**
+     * Primary address for invoices and account notices.
+     */
+    billingEmail?: string | null;
+    /**
+     * Used for billing and feature flags.
+     */
+    plan?: ('free' | 'starter' | 'growth' | 'enterprise') | null;
+    /**
+     * Optional trial expiration date. Leave empty for accounts without a trial.
+     */
+    trialEndsAt?: string | null;
+  };
+  /**
+   * Internal-only notes about this tenant (support history, migration steps, etc.).
+   */
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -195,7 +274,7 @@ export interface Tenant {
  */
 export interface Media {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   alt: string;
   caption?: {
     root: {
@@ -288,7 +367,7 @@ export interface Media {
  */
 export interface Page {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   title: string;
   hero: {
     type: 'none' | 'highImpact' | 'mediumImpact' | 'lowImpact';
@@ -358,7 +437,7 @@ export interface Page {
  */
 export interface Post {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   title: string;
   heroImage?: (string | null) | Media;
   content: {
@@ -409,7 +488,7 @@ export interface Post {
  */
 export interface Category {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   title: string;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
@@ -593,7 +672,7 @@ export interface FormBlock {
  */
 export interface Form {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   title: string;
   fields?:
     | (
@@ -768,7 +847,7 @@ export interface Form {
  */
 export interface Redirect {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   from: string;
   to?: {
     type?: ('reference' | 'custom') | null;
@@ -792,7 +871,7 @@ export interface Redirect {
  */
 export interface FormSubmission {
   id: string;
-  tenant?: (string | null) | Tenant;
+  site?: (string | null) | Site;
   form: string | Form;
   submissionData?:
     | {
@@ -916,6 +995,10 @@ export interface PayloadLockedDocument {
         value: string | Tenant;
       } | null)
     | ({
+        relationTo: 'sites';
+        value: string | Site;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: string | Page;
       } | null)
@@ -992,6 +1075,12 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   sitename?: T;
   roles?: T;
+  sites?:
+    | T
+    | {
+        site?: T;
+        id?: T;
+      };
   tenants?:
     | T
     | {
@@ -1020,7 +1109,7 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   alt?: T;
   caption?: T;
   updatedAt?: T;
@@ -1118,6 +1207,34 @@ export interface TenantsSelect<T extends boolean = true> {
   slug?: T;
   image?: T;
   status?: T;
+  account?:
+    | T
+    | {
+        billingEmail?: T;
+        plan?: T;
+        trialEndsAt?: T;
+      };
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites_select".
+ */
+export interface SitesSelect<T extends boolean = true> {
+  tenant?: T;
+  name?: T;
+  slug?: T;
+  status?: T;
+  description?: T;
+  branding?:
+    | T
+    | {
+        logo?: T;
+        primaryColor?: T;
+        secondaryColor?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1126,7 +1243,7 @@ export interface TenantsSelect<T extends boolean = true> {
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   title?: T;
   hero?:
     | T
@@ -1262,7 +1379,7 @@ export interface FormBlockSelect<T extends boolean = true> {
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   title?: T;
   heroImage?: T;
   content?: T;
@@ -1294,7 +1411,7 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   title?: T;
   generateSlug?: T;
   slug?: T;
@@ -1306,7 +1423,7 @@ export interface CategoriesSelect<T extends boolean = true> {
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   from?: T;
   to?:
     | T
@@ -1323,7 +1440,7 @@ export interface RedirectsSelect<T extends boolean = true> {
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   title?: T;
   fields?:
     | T
@@ -1457,7 +1574,7 @@ export interface FormsSelect<T extends boolean = true> {
  * via the `definition` "form-submissions_select".
  */
 export interface FormSubmissionsSelect<T extends boolean = true> {
-  tenant?: T;
+  site?: T;
   form?: T;
   submissionData?:
     | T

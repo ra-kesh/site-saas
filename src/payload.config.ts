@@ -12,6 +12,7 @@ import { Media } from "./collections/Media";
 import { Pages } from "./collections/Pages";
 import { Posts } from "./collections/Posts";
 import { Tenants } from "./collections/Tenants";
+import { Sites } from "./collections/Sites";
 import { Users } from "./collections/Users";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
@@ -20,6 +21,13 @@ import type { GenerateTitle, GenerateURL } from "@payloadcms/plugin-seo/types";
 import { isSuperAdmin } from "./lib/access";
 import { revalidateRedirects } from "./hooks/revalidateRedirects";
 import type { Page, Post } from "./payload-types";
+import {
+  generateSiteContentPath,
+  extractSiteSlug,
+  extractTenantSlug,
+  type SiteReference,
+  type TenantReference,
+} from "./lib/utils";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -32,20 +40,20 @@ const generateTitle: GenerateTitle<Page | Post> = ({ doc }) => {
   return "Tenant Website";
 };
 
+const resolveSiteSlug = (doc?: Partial<Page | Post>) => {
+  if (!doc?.site) {
+    return undefined;
+  }
+
+  return extractSiteSlug(doc.site as SiteReference);
+};
+
 const resolveTenantSlug = (doc?: Partial<Page | Post>) => {
-  if (!doc?.tenant) {
+  if (!doc || typeof doc !== "object" || !("tenant" in doc)) {
     return undefined;
   }
 
-  if (typeof doc.tenant === "string") {
-    return undefined;
-  }
-
-  if (typeof doc.tenant === "object" && "slug" in doc.tenant) {
-    return doc.tenant.slug as string | undefined;
-  }
-
-  return undefined;
+  return extractTenantSlug((doc as { tenant?: TenantReference }).tenant);
 };
 
 const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
@@ -54,6 +62,7 @@ const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
     process.env.NEXT_PUBLIC_SERVER_URL ||
     "http://localhost:3000";
 
+  const siteSlug = resolveSiteSlug(doc);
   const tenantSlug = resolveTenantSlug(doc);
   const slugValue = doc?.slug as unknown;
   let normalizedSlug = "home";
@@ -64,14 +73,15 @@ const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
     normalizedSlug = slugValue.join("/") || "home";
   }
 
-  const path =
-    normalizedSlug === "home" || normalizedSlug === ""
-      ? ""
-      : `/${normalizedSlug}`;
+  const collection = doc && typeof doc === "object" && "layout" in doc ? "pages" : "posts";
 
-  const tenantPrefix = tenantSlug ? `/tenants/${tenantSlug}` : "";
+  const pathname = generateSiteContentPath({
+    collection,
+    slug: normalizedSlug,
+    siteSlug: siteSlug ?? tenantSlug,
+  });
 
-  return `${baseURL}${tenantPrefix}${path}`;
+  return `${baseURL}${pathname}`;
 };
 
 export default buildConfig({
@@ -86,7 +96,7 @@ export default buildConfig({
     theme: "light",
     suppressHydrationWarning: true,
   },
-  collections: [Users, Media, Tenants, Pages, Posts, Categories],
+  collections: [Users, Media, Tenants, Sites, Pages, Posts, Categories],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   serverURL:
@@ -120,8 +130,8 @@ export default buildConfig({
       generateURL,
     }),
     multiTenantPlugin({
+      tenantsSlug: "sites",
       collections: {
-        // products: {},
         media: {},
         pages: {},
         posts: {},
@@ -131,6 +141,7 @@ export default buildConfig({
         "form-submissions": {},
       },
       tenantField: {
+        name: "site",
         admin: {
           disableListColumn: false,
         },

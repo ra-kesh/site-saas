@@ -14,8 +14,8 @@ type SeedCategory = {
 
 type PostSeedArgs = {
   categories: SeedCategory[]
-  tenantId: string
-  tenantSlug: string
+  siteId: string
+  siteSlug: string
   businessName: string
   businessDescription: string
   primaryAudience: string
@@ -24,21 +24,21 @@ type PostSeedArgs = {
 
 export const createPostSeeds = ({
   categories,
-  tenantId,
-  tenantSlug,
+  siteId,
+  siteSlug,
   businessName,
   businessDescription,
   primaryAudience,
   primaryGoal,
-}: PostSeedArgs): Array<RequiredDataFromCollectionSlug<'posts'> & { tenant: string }> => {
+}: PostSeedArgs): Array<RequiredDataFromCollectionSlug<'posts'> & { site: string }> => {
   const [firstCategory, secondCategory = firstCategory] = categories
   const goalPhrase = primaryGoal.toLowerCase()
 
   return [
     {
-      tenant: tenantId,
+      site: siteId,
       title: `Why ${businessName} is launching now`,
-      slug: `introducing-${tenantSlug}`,
+      slug: `introducing-${siteSlug}`,
       _status: 'published',
       categories: firstCategory ? [firstCategory.id] : [],
       content: createRichText([
@@ -63,9 +63,9 @@ export const createPostSeeds = ({
       },
     },
     {
-      tenant: tenantId,
+      site: siteId,
       title: `Inside the ${businessName} build process`,
-      slug: `inside-${tenantSlug}-build`,
+      slug: `inside-${siteSlug}-build`,
       _status: 'published',
       categories: secondCategory ? [secondCategory.id] : [],
       content: createRichText([

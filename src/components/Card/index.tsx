@@ -7,9 +7,20 @@ import React, { Fragment } from 'react'
 import type { Post } from '@/payload-types'
 
 import { Media } from '@/components/Media'
-import { extractTenantSlug, generateTenantContentPath } from '@/lib/utils'
+import {
+  extractSiteSlug,
+  extractTenantSlug,
+  generateSiteContentPath,
+  type SiteReference,
+  type TenantReference,
+} from '@/lib/utils'
 
-export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'title' | 'tenant'>
+type LegacyTenantField = {
+  tenant?: TenantReference
+}
+
+export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'title' | 'site'> &
+  LegacyTenantField
 
 export const Card: React.FC<{
   alignItems?: 'center'
@@ -28,12 +39,13 @@ export const Card: React.FC<{
   const hasCategories = categories && Array.isArray(categories) && categories.length > 0
   const titleToUse = titleFromProps || title
   const sanitizedDescription = description?.replace(/\s/g, ' ') // replace non-breaking space with white space
+  const siteSlug = doc?.site ? extractSiteSlug(doc.site as SiteReference) : undefined
   const tenantSlug = doc?.tenant ? extractTenantSlug(doc.tenant) : undefined
 
-  const href = generateTenantContentPath({
+  const href = generateSiteContentPath({
     collection: relationTo ?? 'posts',
     slug,
-    tenantSlug,
+    siteSlug: siteSlug ?? tenantSlug,
   })
 
   return (

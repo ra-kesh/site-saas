@@ -8,8 +8,8 @@ import {
 } from './richText'
 
 type ContactFormArgs = {
-  tenantId: string
-  tenantSlug: string
+  siteId: string
+  siteSlug: string
   businessName: string
   businessDescription: string
   primaryAudience: string
@@ -18,18 +18,18 @@ type ContactFormArgs = {
 }
 
 export const contactForm = ({
-  tenantId,
-  tenantSlug,
+  siteId,
+  siteSlug,
   businessName,
   businessDescription,
   primaryAudience,
   primaryGoal,
   notificationEmail,
-}: ContactFormArgs): (RequiredDataFromCollectionSlug<'forms'> & { tenant: string }) => {
+}: ContactFormArgs): (RequiredDataFromCollectionSlug<'forms'> & { site: string }) => {
   const goalPhrase = primaryGoal.toLowerCase()
 
   return {
-    tenant: tenantId,
+    site: siteId,
     title: `Contact ${businessName}`,
     submitButtonLabel: 'Send message',
     confirmationType: 'message',
@@ -47,7 +47,7 @@ export const contactForm = ({
     ]),
     emails: [
       {
-        emailFrom: `"${businessName}" <no-reply@${tenantSlug}.example.com>`,
+        emailFrom: `"${businessName}" <no-reply@${siteSlug}.example.com>`,
         emailTo: '{{email}}',
         subject: `We received your message at ${businessName}`,
         message: createRichText([
@@ -61,7 +61,7 @@ export const contactForm = ({
       ...(notificationEmail
         ? [
             {
-              emailFrom: `"${businessName}" <no-reply@${tenantSlug}.example.com>`,
+              emailFrom: `"${businessName}" <no-reply@${siteSlug}.example.com>`,
               emailTo: notificationEmail,
               subject: 'New contact form submission',
               message: createRichText([

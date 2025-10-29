@@ -9,7 +9,7 @@ import {
 
 type ContactPageArgs = {
   contactFormId: string
-  tenantId: string
+  siteId: string
   businessName: string
   businessDescription: string
   primaryGoal: string
@@ -17,12 +17,12 @@ type ContactPageArgs = {
 
 export const contactPage = ({
   contactFormId,
-  tenantId,
+  siteId,
   businessName,
   businessDescription,
   primaryGoal,
-}: ContactPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => ({
-  tenant: tenantId,
+}: ContactPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { site: string }) => ({
+  site: siteId,
   title: 'Contact',
   slug: 'contact',
   _status: 'published',

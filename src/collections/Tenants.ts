@@ -18,7 +18,9 @@ export const Tenants: CollectionConfig = {
     afterDelete: [revalidateTenantDelete],
   },
   admin: {
-    useAsTitle: "slug",
+    description:
+      "Tenants represent customer accounts (billing, ownership, and shared settings). Sites will reference the tenant that owns them.",
+    useAsTitle: "name",
   },
   fields: [
     {
@@ -41,7 +43,7 @@ export const Tenants: CollectionConfig = {
       },
       admin: {
         description:
-          "This is the subdomain for the store (e.g. [slug].example.com)",
+          "Legacy tenant slug used for backwards compatibility. Sites will own routing in future phases.",
       },
     },
     {
@@ -76,6 +78,53 @@ export const Tenants: CollectionConfig = {
           value: "suspended",
         },
       ],
+    },
+    {
+      name: "account",
+      label: "Account Settings",
+      type: "group",
+      admin: {
+        description:
+          "Metadata about the organization that owns this account. These values never surface on public sites.",
+      },
+      fields: [
+        {
+          name: "billingEmail",
+          type: "email",
+          admin: {
+            description: "Primary address for invoices and account notices.",
+          },
+        },
+        {
+          name: "plan",
+          type: "select",
+          options: [
+            { value: "free", label: "Free" },
+            { value: "starter", label: "Starter" },
+            { value: "growth", label: "Growth" },
+            { value: "enterprise", label: "Enterprise" },
+          ],
+          admin: {
+            description: "Used for billing and feature flags.",
+          },
+        },
+        {
+          name: "trialEndsAt",
+          type: "date",
+          admin: {
+            description:
+              "Optional trial expiration date. Leave empty for accounts without a trial.",
+          },
+        },
+      ],
+    },
+    {
+      name: "notes",
+      type: "textarea",
+      admin: {
+        description:
+          "Internal-only notes about this tenant (support history, migration steps, etc.).",
+      },
     },
     // {
     //   name: "stripeAccountId",

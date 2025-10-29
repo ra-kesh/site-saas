@@ -1,12 +1,13 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-import { Media, Tenant, User } from "@/payload-types";
+import { Media, Site, Tenant, User } from "@/payload-types";
 
 import {
   baseProcedure,
   createTRPCRouter,
   protectedProcedure,
 } from "@/trpc/init";
+
 const MAX_SUBDOMAIN_LENGTH = 63;
 const MIN_SUBDOMAIN_LENGTH = 3;
 const SUBDOMAIN_PATTERN =
@@ -23,26 +24,101 @@ const RESERVED_SUBDOMAINS = new Set([
   "status",
 ]);
 
+type SiteWithTenant = Site & { tenant: Tenant | string | null };
+type ProcedureContext = {
+  db: any;
+  session?: { user?: User | null };
+};
+
 function normalizeSubdomain(raw: string) {
   return raw.trim().toLowerCase();
 }
 
-function resolvePrimaryTenantId(user: User | null): string | null {
-  const tenantRelation = user?.tenants?.[0]?.tenant;
+function extractRelationId(
+  relation:
+    | string
+    | {
+        id?: string;
+        value?: string | { id?: string | null } | null;
+      }
+    | null
+    | undefined
+): string | null {
+  if (!relation) return null;
 
-  if (!tenantRelation) {
-    return null;
+  if (typeof relation === "string") {
+    return relation;
   }
 
-  if (typeof tenantRelation === "string") {
-    return tenantRelation;
-  }
+  if (typeof relation === "object") {
+    if (relation.id && typeof relation.id === "string") {
+      return relation.id;
+    }
 
-  if (typeof tenantRelation === "object" && tenantRelation.id) {
-    return tenantRelation.id;
+    if (relation.value) {
+      if (typeof relation.value === "string") {
+        return relation.value;
+      }
+
+      if (
+        typeof relation.value === "object" &&
+        relation.value !== null &&
+        "id" in relation.value &&
+        typeof relation.value.id === "string"
+      ) {
+        return relation.value.id;
+      }
+    }
   }
 
   return null;
+}
+
+function resolvePrimaryContext(user: User | null) {
+  const siteRelation = (user as User & { sites?: { site?: unknown }[] })?.sites?.[0]?.site;
+  const tenantRelation = user?.tenants?.[0]?.tenant;
+
+  return {
+    siteId: extractRelationId(siteRelation as never),
+    tenantId: extractRelationId(tenantRelation),
+  };
+}
+
+async function resolveTenant(
+  ctx: ProcedureContext,
+  tenantField: Tenant | string | null | undefined
+): Promise<(Tenant & { image: Media | null }) | null> {
+  if (!tenantField) {
+    return null;
+  }
+
+  if (typeof tenantField === "string") {
+    const tenant = await ctx.db.findByID({
+      collection: "tenants",
+      id: tenantField,
+      depth: 1,
+    });
+
+    return tenant ? (tenant as Tenant & { image: Media | null }) : null;
+  }
+
+  return tenantField as Tenant & { image: Media | null };
+}
+
+async function enrichSite(
+  ctx: ProcedureContext,
+  site: Site | null
+) {
+  if (!site) {
+    return null;
+  }
+
+  const tenant = await resolveTenant(ctx, site.tenant);
+
+  return {
+    site: site as SiteWithTenant,
+    tenant,
+  };
 }
 
 function generateSubdomainSuggestions(base: string) {
@@ -83,54 +159,91 @@ function generateSubdomainSuggestions(base: string) {
   return Array.from(new Set(suggestions)).slice(0, 3);
 }
 
+async function findSiteBySlug(ctx: ProcedureContext, slug: string) {
+  const result = await ctx.db.find({
+    collection: "sites",
+    depth: 1,
+    limit: 1,
+    pagination: false,
+    where: {
+      slug: {
+        equals: slug,
+      },
+    },
+  });
+
+  return (result.docs[0] as Site | undefined) ?? null;
+}
+
+async function findSiteById(ctx: ProcedureContext, id: string) {
+  try {
+    const site = await ctx.db.findByID({
+      collection: "sites",
+      depth: 1,
+      id,
+    });
+
+    return (site as Site | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function findFirstSiteForTenant(ctx: ProcedureContext, tenantId: string) {
+  const result = await ctx.db.find({
+    collection: "sites",
+    depth: 1,
+    limit: 1,
+    pagination: false,
+    where: {
+      tenant: {
+        equals: tenantId,
+      },
+    },
+  });
+
+  return (result.docs[0] as Site | undefined) ?? null;
+}
+
 export const tenantsRouter = createTRPCRouter({
-  getOne: baseProcedure
+  getSite: baseProcedure
     .input(
       z.object({
         slug: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const tenantsData = await ctx.db.find({
-        collection: "tenants",
-        depth: 1, // "tenant.image" is a type of "Media"
-        where: {
-          slug: {
-            equals: input.slug,
-          },
-        },
-        limit: 1,
-        pagination: false,
-      });
+      const site = await findSiteBySlug(ctx, input.slug);
 
-      const tenant = tenantsData.docs[0];
-
-      if (!tenant) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      if (!site) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
       }
 
-      return tenant as Tenant & { image: Media | null };
-    }),
-  getCurrent: protectedProcedure.query(async ({ ctx }) => {
-    const tenantId = resolvePrimaryTenantId(ctx.session.user as User);
+      const enriched = await enrichSite(ctx, site);
 
-    if (!tenantId) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "No tenant found for the current user.",
-      });
+      if (!enriched) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Site not found" });
+      }
+
+      return enriched;
+    }),
+  getCurrentSite: protectedProcedure.query(async ({ ctx }) => {
+    const { siteId, tenantId } = resolvePrimaryContext(ctx.session.user as User);
+
+    let site: Site | null = null;
+
+    if (siteId) {
+      site = await findSiteById(ctx, siteId);
     }
 
-    const tenant = await ctx.db.findByID({
-      collection: "tenants",
-      id: tenantId,
-      depth: 1,
-    });
+    if (!site && tenantId) {
+      site = await findFirstSiteForTenant(ctx, tenantId);
+    }
 
-    if (!tenant) {
+    if (!site) {
       throw new TRPCError({
         code: "NOT_FOUND",
-        message: "Tenant record is missing.",
+        message: "No site found for the current user.",
       });
     }
 
@@ -144,20 +257,27 @@ export const tenantsRouter = createTRPCRouter({
             slug: { equals: "home" },
           },
           {
-            tenant: { equals: tenantId },
+            site: { equals: site.id },
           },
         ],
       },
     });
 
-    const hasSeeded = seededHome.totalDocs > 0;
+    const enriched = await enrichSite(ctx, site);
+
+    if (!enriched) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Site record is missing.",
+      });
+    }
 
     return {
-      ...(tenant as Tenant & { image: Media | null }),
-      hasSeeded,
+      ...enriched,
+      hasSeeded: seededHome.totalDocs > 0,
     };
   }),
-  checkAvailability: baseProcedure
+  checkSiteAvailability: baseProcedure
     .input(
       z.object({
         subdomain: z.string().trim(),
@@ -225,8 +345,8 @@ export const tenantsRouter = createTRPCRouter({
         };
       }
 
-      const tenantsData = await ctx.db.find({
-        collection: "tenants",
+      const siteResult = await ctx.db.find({
+        collection: "sites",
         where: {
           slug: {
             equals: normalized,
@@ -237,7 +357,7 @@ export const tenantsRouter = createTRPCRouter({
         depth: 0,
       });
 
-      if (tenantsData.docs.length > 0) {
+      if (siteResult.docs.length > 0) {
         return {
           status: "unavailable" as const,
           subdomain: normalized,
