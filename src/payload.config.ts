@@ -121,8 +121,8 @@ export default buildConfig({
       generateURL,
     }),
     multiTenantPlugin({
+      tenantsSlug: "sites",
       collections: {
-        // products: {},
         media: {},
         pages: {},
         posts: {},
@@ -132,6 +132,7 @@ export default buildConfig({
         "form-submissions": {},
       },
       tenantField: {
+        name: "site",
         admin: {
           disableListColumn: false,
         },
