@@ -77,7 +77,7 @@ export default function Home() {
   );
 
   const checkAvailability = useMutation(
-    trpc.tenants.checkAvailability.mutationOptions({
+    trpc.tenants.checkSiteAvailability.mutationOptions({
       onSuccess: (data) => {
         setLastResult(data);
         setCheckedValue(data.subdomain);

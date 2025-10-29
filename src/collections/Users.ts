@@ -2,7 +2,23 @@ import type { CollectionConfig } from "payload";
 import { tenantsArrayField } from "@payloadcms/plugin-multi-tenant/fields";
 import { isSuperAdmin } from "@/lib/access";
 
-const defaultTenantArrayField = tenantsArrayField({
+const siteMembershipField = tenantsArrayField({
+  tenantsArrayFieldName: "sites",
+  tenantsCollectionSlug: "sites",
+  tenantsArrayTenantFieldName: "site",
+  arrayFieldAccess: {
+    read: () => true,
+    create: ({ req }) => isSuperAdmin(req.user),
+    update: ({ req }) => isSuperAdmin(req.user),
+  },
+  tenantFieldAccess: {
+    read: () => true,
+    create: ({ req }) => isSuperAdmin(req.user),
+    update: ({ req }) => isSuperAdmin(req.user),
+  },
+});
+
+const legacyTenantField = tenantsArrayField({
   tenantsArrayFieldName: "tenants",
   tenantsCollectionSlug: "tenants",
   tenantsArrayTenantFieldName: "tenant",
@@ -78,10 +94,19 @@ export const Users: CollectionConfig = {
       },
     },
     {
-      ...defaultTenantArrayField,
+      ...siteMembershipField,
       admin: {
-        ...(defaultTenantArrayField?.admin || {}),
+        ...(siteMembershipField?.admin || {}),
         position: "sidebar",
+      },
+    },
+    {
+      ...legacyTenantField,
+      admin: {
+        ...(legacyTenantField?.admin || {}),
+        position: "sidebar",
+        description:
+          "Legacy tenant memberships. New access is managed via Sites.",
       },
     },
   ],
