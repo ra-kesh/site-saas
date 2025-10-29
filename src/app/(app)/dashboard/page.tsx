@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,18 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
 import { toast } from "sonner";
 
@@ -59,12 +48,6 @@ export default function DashboardPage() {
   const tenant = siteContext?.tenant ?? null;
   const isLoading = sessionQuery.isLoading || siteContextQuery.isLoading;
 
-  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [businessName, setBusinessName] = useState("");
-  const [businessDescription, setBusinessDescription] = useState("");
-  const [primaryAudience, setPrimaryAudience] = useState("");
-  const [primaryGoal, setPrimaryGoal] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
   const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -91,22 +74,24 @@ export default function DashboardPage() {
     previousUserIdRef.current = currentUserId;
   }, [queryClient, sessionUserId, currentSiteQueryKey]);
 
-  const generateSite = useMutation({
-    mutationFn: async (input: {
-      siteSlug: string;
-      business: {
-        name: string;
-        description: string;
-        audience: string;
-        primaryGoal: string;
-      };
-    }) => {
+  const generateSite = useMutation<
+    { success: boolean },
+    Error,
+    string | undefined
+  >({
+    mutationFn: async (targetSlug) => {
       const response = await fetch("/next/seed", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(input),
+        body: JSON.stringify(
+          targetSlug
+            ? {
+                siteSlug: targetSlug,
+              }
+            : {}
+        ),
       });
 
       if (!response.ok) {
@@ -122,7 +107,6 @@ export default function DashboardPage() {
       toast.success(
         "Template generated! Visit your site or open the admin to keep editing."
       );
-      setIsGenerateOpen(false);
       void siteContextQuery.refetch();
     },
     onError: (error) => {
@@ -144,15 +128,6 @@ export default function DashboardPage() {
     }
   }, [isLoading, site, router]);
 
-  useEffect(() => {
-    if (site?.name) {
-      setBusinessName(site.name);
-      return;
-    }
-
-    setBusinessName("");
-  }, [site?.name]);
-
   if (isLoading || !tenant) {
     return (
       <div className="space-y-6">
@@ -168,6 +143,19 @@ export default function DashboardPage() {
     ? `https://${siteSlug}.${ROOT_DOMAIN}`
     : `https://${ROOT_DOMAIN}`;
   const hasSeeded = Boolean(siteContext?.hasSeeded);
+
+  const handleGenerate = () => {
+    const targetSlug = siteSlug.trim();
+
+    if (!targetSlug) {
+      toast.error(
+        "We couldn't determine your site slug. Please contact support."
+      );
+      return;
+    }
+
+    generateSite.mutate(targetSlug);
+  };
 
   return (
     <div className="space-y-6">
@@ -212,7 +200,7 @@ export default function DashboardPage() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setIsGenerateOpen(true)}
+                onClick={handleGenerate}
                 disabled={generateSite.isPending}
               >
                 {generateSite.isPending
@@ -223,7 +211,7 @@ export default function DashboardPage() {
           ) : (
             <Button
               type="button"
-              onClick={() => setIsGenerateOpen(true)}
+              onClick={handleGenerate}
               disabled={generateSite.isPending}
             >
               {generateSite.isPending
@@ -233,139 +221,6 @@ export default function DashboardPage() {
           )}
         </CardFooter>
       </Card>
-
-      <Dialog
-        open={isGenerateOpen}
-        onOpenChange={(open) => {
-          setIsGenerateOpen(open);
-          if (!open) {
-            setFormError(null);
-            generateSite.reset();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Tell us about your business</DialogTitle>
-            <DialogDescription>
-              We&apos;ll use these answers to shape your starter template and
-              block recommendations.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const trimmedName = businessName.trim();
-              const trimmedDescription = businessDescription.trim();
-              const trimmedAudience = primaryAudience.trim();
-              const trimmedGoal = primaryGoal.trim();
-
-              if (
-                !trimmedName ||
-                !trimmedDescription ||
-                !trimmedAudience ||
-                !trimmedGoal
-              ) {
-                setFormError(
-                  "Please answer every question so we can tailor your template."
-                );
-                return;
-              }
-
-              setFormError(null);
-              if (!siteSlug) {
-                setFormError(
-                  "We couldn't determine your site slug. Please contact support."
-                );
-                return;
-              }
-
-              const targetSlug = siteSlug;
-
-              if (!targetSlug) {
-                setFormError(
-                  "We couldn't determine your site slug. Please contact support."
-                );
-                return;
-              }
-
-              generateSite.mutate({
-                siteSlug: targetSlug,
-                business: {
-                  name: trimmedName,
-                  description: trimmedDescription,
-                  audience: trimmedAudience,
-                  primaryGoal: trimmedGoal,
-                },
-              });
-            }}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="business-name">Business name</Label>
-              <Input
-                id="business-name"
-                value={businessName}
-                onChange={(event) => setBusinessName(event.target.value)}
-                placeholder="e.g. Of Puri Catering"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="business-description">
-                What does your business do?
-              </Label>
-              <Textarea
-                id="business-description"
-                value={businessDescription}
-                onChange={(event) => setBusinessDescription(event.target.value)}
-                placeholder="Share the products, services, or experience you provide."
-                minLength={10}
-                rows={4}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="business-audience">Primary audience</Label>
-              <Input
-                id="business-audience"
-                value={primaryAudience}
-                onChange={(event) => setPrimaryAudience(event.target.value)}
-                placeholder="e.g. Boutique event planners, couples, local shoppers"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="business-goal">Main call to action</Label>
-              <Input
-                id="business-goal"
-                value={primaryGoal}
-                onChange={(event) => setPrimaryGoal(event.target.value)}
-                placeholder="e.g. Book a tasting, Visit our store, Request a quote"
-                required
-              />
-            </div>
-            {formError ? (
-              <p className="text-sm text-destructive">{formError}</p>
-            ) : null}
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsGenerateOpen(false)}
-                disabled={generateSite.isPending}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={generateSite.isPending}>
-                {generateSite.isPending
-                  ? "Generating template…"
-                  : "Generate template"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

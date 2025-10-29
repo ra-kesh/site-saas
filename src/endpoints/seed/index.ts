@@ -144,21 +144,22 @@ export const seedSite = async ({
 
   payload.logger.info('— Cleared previous seed content')
 
-  const categories = await Promise.all(
-    categoryNames.map((title) =>
-      payload.create({
-        collection: 'categories',
-        context: {
-          disableRevalidate: true,
-        },
-        data: {
-          site: siteId,
-          title,
-          slug: `${toSlug(title)}-${siteSlug}`,
-        } as any,
-      }),
-    ),
-  )
+  const categories: Array<{ id: string; title?: string }> = []
+
+  for (const title of categoryNames) {
+    const category = await payload.create({
+      collection: 'categories',
+      context: {
+        disableRevalidate: true,
+      },
+      data: {
+        site: siteId,
+        title,
+        slug: `${toSlug(title)}-${siteSlug}`,
+      } as any,
+    })
+    categories.push(category as { id: string; title?: string })
+  }
 
   payload.logger.info('— Seeded categories')
 
@@ -216,29 +217,17 @@ export const seedSite = async ({
     siteName: displayName,
   })
 
-  await Promise.all([
-    payload.create({
+  const pageSeeds = [homePageData, contactPageData, postsListingPageData]
+
+  for (const seed of pageSeeds) {
+    await payload.create({
       collection: 'pages',
       context: {
         disableRevalidate: true,
       },
-      data: homePageData,
-    }),
-    payload.create({
-      collection: 'pages',
-      context: {
-        disableRevalidate: true,
-      },
-      data: contactPageData,
-    }),
-    payload.create({
-      collection: 'pages',
-      context: {
-        disableRevalidate: true,
-      },
-      data: postsListingPageData,
-    }),
-  ])
+      data: seed,
+    })
+  }
 
   payload.logger.info('— Seeded starter pages')
 
