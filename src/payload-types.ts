@@ -145,6 +145,15 @@ export interface User {
   id: string;
   sitename: string;
   roles?: ('super-admin' | 'user')[] | null;
+  sites?:
+    | {
+        site: string | Site;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Legacy tenant memberships. New access is managed via Sites.
+   */
   tenants?:
     | {
         tenant: string | Tenant;
@@ -168,6 +177,51 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+}
+/**
+ * Sites belong to tenants. Each site can have its own pages, posts, and branding.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sites".
+ */
+export interface Site {
+  id: string;
+  /**
+   * Choose which tenant owns this site. Tenants can manage multiple sites.
+   */
+  tenant: string | Tenant;
+  /**
+   * Public-facing name shown in navigation and metadata.
+   */
+  name: string;
+  /**
+   * Used for subdomains and routing (e.g. [slug].example.com).
+   */
+  slug: string;
+  /**
+   * Only active sites are exposed publicly. Draft sites stay internal until ready.
+   */
+  status: 'draft' | 'active' | 'suspended' | 'archived';
+  /**
+   * Internal notes about this site. Use this to track vertical, launch dates, etc.
+   */
+  description?: string | null;
+  /**
+   * Optional branding controls to customize navigation and marketing components.
+   */
+  branding?: {
+    logo?: (string | null) | Media;
+    /**
+     * Hex color (e.g. #0040FF).
+     */
+    primaryColor?: string | null;
+    /**
+     * Hex color used for accents.
+     */
+    secondaryColor?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Tenants represent customer accounts (billing, ownership, and shared settings). Sites will reference the tenant that owns them.
@@ -306,51 +360,6 @@ export interface Media {
       filename?: string | null;
     };
   };
-}
-/**
- * Sites belong to tenants. Each site can have its own pages, posts, and branding.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sites".
- */
-export interface Site {
-  id: string;
-  /**
-   * Choose which tenant owns this site. Tenants can manage multiple sites.
-   */
-  tenant: string | Tenant;
-  /**
-   * Public-facing name shown in navigation and metadata.
-   */
-  name: string;
-  /**
-   * Used for subdomains and routing (e.g. [slug].example.com).
-   */
-  slug: string;
-  /**
-   * Only active sites are exposed publicly. Draft sites stay internal until ready.
-   */
-  status: 'draft' | 'active' | 'suspended' | 'archived';
-  /**
-   * Internal notes about this site. Use this to track vertical, launch dates, etc.
-   */
-  description?: string | null;
-  /**
-   * Optional branding controls to customize navigation and marketing components.
-   */
-  branding?: {
-    logo?: (string | null) | Media;
-    /**
-     * Hex color (e.g. #0040FF).
-     */
-    primaryColor?: string | null;
-    /**
-     * Hex color used for accents.
-     */
-    secondaryColor?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1066,6 +1075,12 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   sitename?: T;
   roles?: T;
+  sites?:
+    | T
+    | {
+        site?: T;
+        id?: T;
+      };
   tenants?:
     | T
     | {

@@ -79,7 +79,7 @@ function extractRelationSlug(candidate: ReferenceValue): string | undefined {
 }
 
 const resolveSitePathPrefix = () =>
-  process.env.NEXT_PUBLIC_SITE_PATH_PREFIX || "tenants";
+  process.env.NEXT_PUBLIC_SITE_PATH_PREFIX || "sites";
 
 export function extractSiteId(site: SiteReference): string | undefined {
   if (site && typeof site === "object" && "id" in site) {

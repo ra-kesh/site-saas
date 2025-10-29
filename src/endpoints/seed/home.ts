@@ -7,14 +7,14 @@ import {
   createRichText,
   createTextNode,
 } from './richText'
-import { generateTenantContentPath } from '@/lib/utils'
+import { generateSiteContentPath } from '@/lib/utils'
 
 type HomePageArgs = {
   categories: string[]
   contactUrl: string
   featuredPostUrl: string
-  tenantId: string
-  tenantSlug: string
+  siteId: string
+  siteSlug: string
   businessName: string
   businessDescription: string
   primaryAudience: string
@@ -25,21 +25,22 @@ export const home = ({
   categories,
   contactUrl,
   featuredPostUrl,
-  tenantId,
-  tenantSlug,
+  siteId,
+  siteSlug,
   businessName,
   businessDescription,
   primaryAudience,
   primaryGoal,
-}: HomePageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => {
-  const siteHomePath = generateTenantContentPath({
+}: HomePageArgs): (RequiredDataFromCollectionSlug<'pages'> & { site: string }) => {
+  const siteHomePath = generateSiteContentPath({
     slug: 'home',
-    tenantSlug,
+    siteSlug,
+    includeSitePrefix: true,
   })
   const goalPhrase = primaryGoal.toLowerCase()
 
   return {
-    tenant: tenantId,
+    site: siteId,
     title: 'Home',
     slug: 'home',
     _status: 'published',

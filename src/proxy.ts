@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const TENANT_PREFIX = "/tenants";
+const TENANT_PREFIX = "/sites";
 const DEV_SUBDOMAIN_COOKIE = "__tenant_subdomain";
 const DEV_SUBDOMAIN_PARAM = "__subdomain";
 const PUBLIC_FILE = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|js|css|map)$/i;

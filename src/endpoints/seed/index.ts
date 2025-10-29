@@ -7,7 +7,28 @@ import { contactPage } from './contact-page'
 import { home } from './home'
 import { postsListingPage } from './posts-page'
 import { createPostSeeds } from './posts'
-import { generateTenantContentPath } from '@/lib/utils'
+import { generateSiteContentPath } from '@/lib/utils'
+
+type SeedSiteArgs = {
+  payload: Payload
+  site: {
+    id: string
+    slug: string
+    name: string
+  }
+  tenant?: {
+    id: string
+    slug: string
+    name: string
+  } | null
+  ownerEmail?: string | null
+  businessDetails?: {
+    name?: string | null
+    description?: string | null
+    audience?: string | null
+    primaryGoal?: string | null
+  }
+}
 
 const categoryNames = ['Product updates', 'Customer spotlights']
 
@@ -18,34 +39,20 @@ const toSlug = (input: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-type SeedTenantArgs = {
-  payload: Payload
-  tenant: {
-    id: string
-    slug: string
-    name: string
-  }
-  ownerEmail?: string | null
-  businessDetails?: {
-    name?: string | null
-    description?: string | null
-    audience?: string | null
-    primaryGoal?: string | null
-  }
-}
-
-export const seedTenant = async ({
+export const seedSite = async ({
   payload,
+  site,
   tenant,
   ownerEmail,
   businessDetails,
-}: SeedTenantArgs) => {
-  const { id: tenantId, slug: tenantSlug, name: tenantName } = tenant
+}: SeedSiteArgs) => {
+  const { id: siteId, slug: siteSlug, name: siteName } = site
+  const tenantInfo = tenant ?? null
 
-  payload.logger.info(`Seeding starter content for tenant "${tenantSlug}"…`)
+  payload.logger.info(`Seeding starter content for site "${siteSlug}"…`)
 
-  const displayName = businessDetails?.name?.trim() || tenantName
-  const defaultDescription = `${displayName} delivers block-based marketing sites with reusable sections, live previews, and tenant-specific content tailored to each workspace.`
+  const displayName = businessDetails?.name?.trim() || siteName
+  const defaultDescription = `${displayName} delivers block-based marketing sites with reusable sections, live previews, and site-specific content tailored to each workspace.`
   const description = businessDetails?.description?.trim() || defaultDescription
   const audience =
     businessDetails?.audience?.trim() || 'growth-focused founders and marketing teams'
@@ -66,8 +73,8 @@ export const seedTenant = async ({
             },
           },
           {
-            tenant: {
-              equals: tenantId,
+            site: {
+              equals: siteId,
             },
           },
         ],
@@ -95,8 +102,8 @@ export const seedTenant = async ({
       limit: 100,
       pagination: false,
       where: {
-        tenant: {
-          equals: tenantId,
+        site: {
+          equals: siteId,
         },
       },
     })
@@ -105,7 +112,7 @@ export const seedTenant = async ({
       if (!form.emails) return false
       return form.emails.some((email) =>
         typeof email?.emailFrom === 'string'
-          ? email.emailFrom.includes(`${tenantSlug}.example.com`)
+          ? email.emailFrom.includes(`${siteSlug}.example.com`)
           : false,
       )
     })
@@ -129,9 +136,9 @@ export const seedTenant = async ({
     deleteBySlug('pages', 'home'),
     deleteBySlug('pages', 'contact'),
     deleteBySlug('pages', 'posts'),
-    deleteBySlug('posts', `introducing-${tenantSlug}`),
-    deleteBySlug('posts', `inside-${tenantSlug}-build`),
-    ...categoryNames.map((title) => deleteBySlug('categories', `${toSlug(title)}-${tenantSlug}`)),
+    deleteBySlug('posts', `introducing-${siteSlug}`),
+    deleteBySlug('posts', `inside-${siteSlug}-build`),
+    ...categoryNames.map((title) => deleteBySlug('categories', `${toSlug(title)}-${siteSlug}`)),
     deleteSeedForms(),
   ])
 
@@ -145,9 +152,9 @@ export const seedTenant = async ({
           disableRevalidate: true,
         },
         data: {
-          tenant: tenantId,
+          site: siteId,
           title,
-          slug: `${toSlug(title)}-${tenantSlug}`,
+          slug: `${toSlug(title)}-${siteSlug}`,
         } as any,
       }),
     ),
@@ -161,22 +168,84 @@ export const seedTenant = async ({
       disableRevalidate: true,
     },
     data: contactForm({
-      tenantId,
+      siteId,
+      siteSlug,
       businessName: displayName,
       businessDescription: description,
       primaryAudience: audience,
       primaryGoal,
-      tenantSlug,
       notificationEmail: ownerEmail ?? undefined,
     }),
   })
 
   payload.logger.info('— Added contact form')
 
+  const homePageData = home({
+    categories: categories.map(({ id }) => id as string),
+    contactUrl: generateSiteContentPath({
+      collection: 'pages',
+      slug: 'contact',
+      siteSlug,
+      includeSitePrefix: true,
+    }),
+    featuredPostUrl: generateSiteContentPath({
+      collection: 'posts',
+      slug: `introducing-${siteSlug}`,
+      siteSlug,
+      includeSitePrefix: true,
+    }),
+    siteId,
+    siteSlug,
+    businessName: displayName,
+    businessDescription: description,
+    primaryAudience: audience,
+    primaryGoal,
+  })
+
+  const contactPageData = contactPage({
+    contactFormId: form.id as string,
+    siteId,
+    businessName: displayName,
+    businessDescription: description,
+    primaryGoal,
+  })
+
+  const postsListingPageData = postsListingPage({
+    categories: categories.map(({ id }) => id as string),
+    siteId,
+    siteName: displayName,
+  })
+
+  await Promise.all([
+    payload.create({
+      collection: 'pages',
+      context: {
+        disableRevalidate: true,
+      },
+      data: homePageData,
+    }),
+    payload.create({
+      collection: 'pages',
+      context: {
+        disableRevalidate: true,
+      },
+      data: contactPageData,
+    }),
+    payload.create({
+      collection: 'pages',
+      context: {
+        disableRevalidate: true,
+      },
+      data: postsListingPageData,
+    }),
+  ])
+
+  payload.logger.info('— Seeded starter pages')
+
   const postSeeds = createPostSeeds({
-    categories: categories.map(({ id, title }) => ({ id, title })),
-    tenantId,
-    tenantSlug,
+    categories: categories.map(({ id, title }) => ({ id: id as string, title })),
+    siteId,
+    siteSlug,
     businessName: displayName,
     businessDescription: description,
     primaryAudience: audience,
@@ -198,107 +267,30 @@ export const seedTenant = async ({
 
   if (posts.length > 1) {
     const [firstPost, ...restPosts] = posts
-    const restIds = restPosts.map((post) => post.id)
 
-    await payload.update({
-      id: firstPost.id,
-      collection: 'posts',
-      context: {
-        disableRevalidate: true,
-      },
-      data: {
-        relatedPosts: restIds,
-      },
-    })
-
-    await Promise.all(
-      restPosts.map((post) =>
-        payload.update({
-          id: post.id,
-          collection: 'posts',
-          context: {
-            disableRevalidate: true,
-          },
-          data: {
-            relatedPosts: [firstPost.id, ...restIds.filter((id) => id !== post.id)],
-          },
-        }),
-      ),
-    )
+    if (firstPost && restPosts.length > 0) {
+      await payload.update({
+        collection: 'posts',
+        id: firstPost.id as string,
+        context: {
+          disableRevalidate: true,
+        },
+        data: {
+          relatedPosts: restPosts.map((post) => post.id),
+        },
+      })
+    }
   }
 
-  payload.logger.info(`— Created ${posts.length} posts`)
+  payload.logger.info('— Seeded starter posts')
 
-  await payload.create({
-    collection: 'pages',
-    context: {
-      disableRevalidate: true,
-    },
-    data: contactPage({
-      contactFormId: form.id,
-      tenantId,
-      businessName: displayName,
-      businessDescription: description,
-      primaryGoal,
-    }),
+  const siteHomePath = generateSiteContentPath({
+    slug: 'home',
+    siteSlug,
+    includeSitePrefix: true,
   })
 
-  payload.logger.info('— Published contact page')
-
-  const categoryIds = categories.map((category) => category.id)
-
-  await payload.create({
-    collection: 'pages',
-    context: {
-      disableRevalidate: true,
-    },
-    data: postsListingPage({
-      categories: categoryIds,
-      tenantId,
-      tenantName: displayName,
-    }),
-  })
-
-  payload.logger.info('— Published posts listing')
-
-  const featuredPost = posts[0]
-  const featuredPostUrl = featuredPost
-    ? generateTenantContentPath({
-        collection: 'posts',
-        slug: featuredPost.slug,
-        tenantSlug,
-      })
-    : generateTenantContentPath({
-        slug: 'home',
-        tenantSlug,
-      })
-
-  const contactUrl = generateTenantContentPath({
-    slug: 'contact',
-    tenantSlug,
-  })
-
-  await payload.create({
-    collection: 'pages',
-    context: {
-      disableRevalidate: true,
-    },
-    data: home({
-      categories: categoryIds,
-      contactUrl,
-      featuredPostUrl,
-      tenantId,
-      tenantSlug,
-      businessName: displayName,
-      businessDescription: description,
-      primaryAudience: audience,
-      primaryGoal,
-    }),
-  })
-
-  payload.logger.info('— Published home page')
-  payload.logger.info(`Seeded database successfully for tenant "${tenantSlug}".`)
+  payload.logger.info(
+    `Seeded database successfully for site "${siteSlug}". Visit ${siteHomePath} to review the draft.`,
+  )
 }
-
-// Backwards compatibility for existing imports
-export const seed = seedTenant

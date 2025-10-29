@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
   const generateSite = useMutation({
     mutationFn: async (input: {
-      tenantSlug: string;
+      siteSlug: string;
       business: {
         name: string;
         description: string;
@@ -281,10 +281,17 @@ export default function DashboardPage() {
                 return;
               }
 
-              const tenantSlug = tenant?.slug ?? siteSlug;
+              const targetSlug = siteSlug;
+
+              if (!targetSlug) {
+                setFormError(
+                  "We couldn't determine your site slug. Please contact support."
+                );
+                return;
+              }
 
               generateSite.mutate({
-                tenantSlug,
+                siteSlug: targetSlug,
                 business: {
                   name: trimmedName,
                   description: trimmedDescription,

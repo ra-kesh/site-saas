@@ -12,10 +12,11 @@ import { RenderHero } from "@/heros/RenderHero";
 import { generateMeta } from "@/utilities/generateMeta";
 import { homeStatic } from "@/endpoints/seed/home-static";
 import type { Page } from "@/payload-types";
-import { getTenantPage } from "@/modules/tenants/data/getTenantPage";
+import { generateSiteContentPath } from "@/lib/utils";
+import { getSitePage } from "@/modules/tenants/data/getSitePage";
 
 type PageParams = Promise<{
-  tenantSlug: string;
+  siteSlug: string;
   page?: string[];
 }>;
 
@@ -31,34 +32,38 @@ const getSlugFromParams = (pageSegments?: string[]) => {
   return pageSegments.join("/");
 };
 
-export default async function TenantPage({ params }: { params: PageParams }) {
+export default async function SitePage({ params }: { params: PageParams }) {
   const { isEnabled: draft } = await draftMode();
-  const { tenantSlug, page: pageSegments } = await params;
+  const { siteSlug, page: pageSegments } = await params;
 
-  const decodedTenantSlug = decodeURIComponent(tenantSlug);
+  const decodedSiteSlug = decodeURIComponent(siteSlug);
   const slug = decodeURIComponent(getSlugFromParams(pageSegments));
 
-  const { tenant, page: fetchedPage } = await getTenantPage({
+  const { site, tenant, page: fetchedPage } = await getSitePage({
     draft,
     pageSlug: slug,
-    tenantSlug: decodedTenantSlug,
+    siteSlug: decodedSiteSlug,
   });
 
-  if (!tenant) {
+  if (!site) {
     notFound();
   }
-  const tenantDoc = tenant;
 
-  const urlPath =
-    slug === "home"
-      ? `/tenants/${tenantSlug}`
-      : `/tenants/${tenantSlug}/${slug}`;
+  const tenantDoc = tenant ?? undefined;
+
+  const urlPath = generateSiteContentPath({
+    collection: "pages",
+    slug,
+    siteSlug: decodedSiteSlug,
+    includeSitePrefix: true,
+  });
 
   let page = fetchedPage;
 
   if (!page && slug === "home") {
     page = {
       ...homeStatic,
+      site,
       tenant: tenantDoc,
     } as PageDoc;
   }
@@ -77,7 +82,11 @@ export default async function TenantPage({ params }: { params: PageParams }) {
         <PayloadRedirects disableNotFound url={urlPath} />
         {draft && <LivePreviewListener />}
         <RenderHero {...hero} />
-        <RenderBlocks blocks={layout} site={page.site} tenant={tenantDoc} />
+        <RenderBlocks
+          blocks={layout}
+          site={page.site ?? site}
+          tenant={tenantDoc}
+        />
       </article>
       <Footer />
     </>
@@ -89,28 +98,27 @@ export async function generateMetadata({
 }: {
   params: PageParams;
 }): Promise<Metadata> {
-  const { tenantSlug, page: pageSegments } = await params;
+  const { siteSlug, page: pageSegments } = await params;
   const { isEnabled: draft } = await draftMode();
 
   const slug = decodeURIComponent(getSlugFromParams(pageSegments));
-  const decodedTenantSlug = decodeURIComponent(tenantSlug);
-  const { tenant, page: fetchedPage } = await getTenantPage({
+  const decodedSiteSlug = decodeURIComponent(siteSlug);
+  const { site, page: fetchedPage } = await getSitePage({
     draft,
     pageSlug: slug,
-    tenantSlug: decodedTenantSlug,
+    siteSlug: decodedSiteSlug,
   });
 
-  if (!tenant) {
+  if (!site) {
     notFound();
   }
-  const tenantDoc = tenant;
 
   let page = fetchedPage;
 
   if (!page && slug === "home") {
     page = {
       ...homeStatic,
-      tenant: tenantDoc,
+      site,
     } as PageDoc;
   }
 

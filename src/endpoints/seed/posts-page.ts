@@ -9,16 +9,16 @@ import {
 
 type PostsListingPageArgs = {
   categories: string[]
-  tenantId: string
-  tenantName: string
+  siteId: string
+  siteName: string
 }
 
 export const postsListingPage = ({
   categories,
-  tenantId,
-  tenantName,
-}: PostsListingPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { tenant: string }) => ({
-  tenant: tenantId,
+  siteId,
+  siteName,
+}: PostsListingPageArgs): (RequiredDataFromCollectionSlug<'pages'> & { site: string }) => ({
+  site: siteId,
   title: 'Latest posts',
   slug: 'posts',
   _status: 'published',
@@ -28,7 +28,7 @@ export const postsListingPage = ({
       createHeadingNode('h1', [createTextNode('Latest posts')]),
       createParagraphNode([
         createTextNode(
-          `Stories from the ${tenantName} team — product launches, workflow tips, and customer spotlights for multi-tenant sites.`,
+          `Stories from the ${siteName} team — product launches, workflow tips, and customer spotlights for multi-site experiences.`,
         ),
       ]),
     ]),
@@ -41,7 +41,7 @@ export const postsListingPage = ({
       introContent: createRichText([
         createParagraphNode([
           createTextNode(
-            'Browse every article seeded for this tenant. Filtered archives can be added per category or product line.',
+            'Browse every article seeded for this site. Filtered archives can be added per category or product line.',
           ),
         ]),
       ]),
@@ -51,7 +51,7 @@ export const postsListingPage = ({
     },
   ],
   meta: {
-    title: `${tenantName} posts`,
-    description: 'A running list of tenant launch notes and product updates.',
+    title: `${siteName} posts`,
+    description: 'A running list of launch notes and product updates.',
   },
 })
