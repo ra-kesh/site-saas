@@ -74,7 +74,7 @@ export const Navbar = async ({ tenant }: Props) => {
   if (!headerDoc) return null;
 
   return (
-    <nav className="h-20 border-b font-medium bg-white" aria-label="Primary">
+    <nav className="h-20 border-b font-medium bg-white relative z-50" aria-label="Primary">
       <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 lg:px-12">
         <Link href={tenantUrl} className="flex items-center gap-2">
           {logoUrl && (

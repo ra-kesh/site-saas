@@ -72,12 +72,9 @@ export default async function TenantPostPage({ params }: { params: PageParams })
         <PostHero post={post} />
         <div className="flex flex-col items-center gap-4 pt-8">
           <div className="container">
-            <RichText className="mx-auto max-w-[48rem]" data={post.content} enableGutter={false} />
+            <RichText className="mx-auto max-w-[52rem]" data={post.content} enableGutter={false} />
             {relatedPosts.length > 0 && (
-              <RelatedPosts
-                className="mt-12 max-w-[52rem] lg:grid lg:grid-cols-subgrid col-start-1 col-span-3 grid-rows-[2fr]"
-                docs={relatedPosts}
-              />
+              <RelatedPosts className="mt-12 mx-auto max-w-[52rem]" docs={relatedPosts} />
             )}
           </div>
         </div>

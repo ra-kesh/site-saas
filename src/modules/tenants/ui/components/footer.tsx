@@ -45,9 +45,9 @@ export const Footer = async (props?: TenantContextProps) => {
       <div className="max-w-(--breakpoint-xl) mx-auto flex items-center justify-between h-full gap-4 px-4 py-6 lg:px-12">
         <div className="flex items-center gap-2">
           <p>Powered by</p>
-          <Link href={process.env.NEXT_PUBLIC_APP_URL!}>
+          <Link href={process.env.NEXT_PUBLIC_BRAND_URL || process.env.NEXT_PUBLIC_APP_URL || "/"}>
             <span className={cn("text-2xl font-semibold", poppins.className)}>
-              funroad
+              {process.env.NEXT_PUBLIC_BRAND_NAME || "YourBrand"}
             </span>
           </Link>
         </div>

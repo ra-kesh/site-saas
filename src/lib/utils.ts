@@ -78,9 +78,9 @@ export function generateTenantURL(tenantSlug: string) {
   const isSubdomainRoutingEnabled =
     process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true";
 
-  // In development or subdomain routing disabled mode, use normal routing
-  if (isDevelopment || !isSubdomainRoutingEnabled) {
-    return `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${tenantSlug}`;
+  // Use relative path in development or when subdomains are disabled/misconfigured
+  if (isDevelopment || !isSubdomainRoutingEnabled || !process.env.NEXT_PUBLIC_ROOT_DOMAIN) {
+    return `/tenants/${tenantSlug}`;
   }
 
   const protocol = "https";
