@@ -79,7 +79,7 @@ export default async function TenantPage({ params }: { params: PageParams }) {
         <RenderHero {...hero} />
         <RenderBlocks blocks={layout} tenant={tenantDoc} />
       </article>
-      <Footer />
+      <Footer tenantId={tenantDoc.id} />
     </>
   );
 }

@@ -13,6 +13,8 @@ import { Pages } from "./collections/Pages";
 import { Posts } from "./collections/Posts";
 import { Tenants } from "./collections/Tenants";
 import { Users } from "./collections/Users";
+import { Headers } from "./collections/Headers";
+import { Footers } from "./collections/Footers";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { seoPlugin } from "@payloadcms/plugin-seo";
@@ -86,7 +88,7 @@ export default buildConfig({
     theme: "light",
     suppressHydrationWarning: true,
   },
-  collections: [Users, Media, Tenants, Pages, Posts, Categories],
+  collections: [Users, Media, Tenants, Headers, Footers, Pages, Posts, Categories],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   serverURL:
@@ -123,6 +125,8 @@ export default buildConfig({
       collections: {
         // products: {},
         media: {},
+        headers: {},
+        footers: {},
         pages: {},
         posts: {},
         categories: {},

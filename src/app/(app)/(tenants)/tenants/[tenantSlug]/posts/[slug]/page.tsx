@@ -7,8 +7,8 @@ import type { Post } from "@/payload-types";
 
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
-import { Navbar } from '@/modules/tenants/ui/components/navbar'
-import { Footer } from '@/modules/tenants/ui/components/footer'
+import { Navbar } from "@/modules/tenants/ui/components/navbar";
+import { Footer } from "@/modules/tenants/ui/components/footer";
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 import { PostHero } from '@/heros/PostHero'
 import RichText from '@/components/RichText'
@@ -52,17 +52,7 @@ export default async function TenantPostPage({ params }: { params: PageParams })
   });
 
   if (!post) {
-    return (
-      <>
-        <Navbar tenant={tenantDoc} />
-        <article className="pt-16 pb-16">
-          <PageClient />
-          <PayloadRedirects url={urlPath} />
-          {draft && <LivePreviewListener />}
-        </article>
-        <Footer />
-      </>
-    );
+    return <PayloadRedirects url={urlPath} />;
   }
 
   const relatedPosts =
@@ -92,7 +82,7 @@ export default async function TenantPostPage({ params }: { params: PageParams })
           </div>
         </div>
       </article>
-      <Footer />
+      <Footer tenantId={tenantDoc.id} />
     </>
   );
 }

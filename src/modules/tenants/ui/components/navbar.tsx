@@ -6,6 +6,9 @@ import { generateTenantURL } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Media, Tenant } from "@/payload-types";
 import { getMediaUrl } from "@/utilities/getMediaUrl";
+import { CMSLink } from "@/components/Link";
+import { getPayload } from "payload";
+import configPromise from "@payload-config";
 
 interface Props {
   tenant: Tenant;
@@ -33,9 +36,18 @@ const getImageUrl = (image: Tenant["image"]) => {
   return null;
 };
 
-export const Navbar = ({ tenant }: Props) => {
+export const Navbar = async ({ tenant }: Props) => {
   const tenantUrl = generateTenantURL(tenant.slug);
   const imageUrl = getImageUrl(tenant.image);
+  const payload = await getPayload({ config: configPromise });
+  const headerResult = await payload.find({
+    collection: "headers",
+    limit: 1,
+    pagination: false,
+    where: { tenant: { equals: tenant.id } },
+  });
+  const headerDoc = (headerResult.docs?.[0] as any) ?? null;
+  const navItems = Array.isArray(headerDoc?.navItems) ? headerDoc.navItems : [];
 
   return (
     <nav className="h-20 border-b font-medium bg-white">
@@ -52,6 +64,11 @@ export const Navbar = ({ tenant }: Props) => {
           )}
           <p className="text-xl">{tenant.name}</p>
         </Link>
+        <div className="flex items-center gap-4">
+          {navItems.map((item: any, i: number) => (
+            <CMSLink key={i} {...item.link} appearance="link" />
+          ))}
+        </div>
       </div>
     </nav>
   );
