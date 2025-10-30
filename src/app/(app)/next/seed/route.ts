@@ -75,15 +75,39 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    await seedTenant({
-      payload,
-      tenant: {
-        id: tenantDoc.id,
-        slug: tenantDoc.slug,
-        name: tenantDoc.name,
-      },
-      ownerEmail: (user as User).email,
-    })
+    const withMongoRetry = async <T>(fn: () => Promise<T>, attempts = 5): Promise<T> => {
+      let lastErr: unknown
+      for (let i = 0; i < attempts; i++) {
+        try {
+          return await fn()
+        } catch (err: any) {
+          const code = err?.code as number | undefined
+          const labels: string[] | undefined = err?.errorResponse?.errorLabels || err?.errorLabels
+          const isTransient = labels?.includes('TransientTransactionError')
+          const isRetryable = isTransient || code === 112 || code === 251
+          if (!isRetryable || i === attempts - 1) {
+            throw err
+          }
+          const delay = 150 * Math.pow(2, i) + Math.floor(Math.random() * 100)
+          await new Promise((res) => setTimeout(res, delay))
+          lastErr = err
+        }
+      }
+      throw lastErr
+    }
+
+    await withMongoRetry(
+      () =>
+        seedTenant({
+          payload,
+          tenant: {
+            id: tenantDoc.id,
+            slug: tenantDoc.slug,
+            name: tenantDoc.name,
+          },
+          ownerEmail: (user as User).email,
+        }),
+    )
 
     return Response.json({ success: true })
   } catch (e) {

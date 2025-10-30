@@ -19,6 +19,27 @@ export const authRouter = createTRPCRouter({
   register: baseProcedure
     .input(registerSchema)
     .mutation(async ({ input, ctx }) => {
+      const withMongoRetry = async <T>(fn: () => Promise<T>, attempts = 5): Promise<T> => {
+        let lastErr: unknown;
+        for (let i = 0; i < attempts; i++) {
+          try {
+            return await fn();
+          } catch (err: any) {
+            const code = err?.code as number | undefined;
+            const labels: string[] | undefined = err?.errorResponse?.errorLabels || err?.errorLabels;
+            const isTransient = labels?.includes("TransientTransactionError");
+            const isRetryable = isTransient || code === 112 || code === 251; // WriteConflict, NoSuchTransaction
+            if (!isRetryable || i === attempts - 1) {
+              throw err;
+            }
+            const delay = 150 * Math.pow(2, i) + Math.floor(Math.random() * 100);
+            await new Promise((res) => setTimeout(res, delay));
+            lastErr = err;
+          }
+        }
+        // Should never reach here, but TS guard
+        throw lastErr;
+      };
       const existingData = await ctx.db.find({
         collection: "users",
         limit: 1,
@@ -71,15 +92,17 @@ export const authRouter = createTRPCRouter({
       });
 
       try {
-        await seedTenant({
-          payload: ctx.db,
-          tenant: {
-            id: tenant.id,
-            slug: tenant.slug,
-            name: tenant.name,
-          },
-          ownerEmail: input.email,
-        });
+        await withMongoRetry(() =>
+          seedTenant({
+            payload: ctx.db,
+            tenant: {
+              id: tenant.id,
+              slug: tenant.slug,
+              name: tenant.name,
+            },
+            ownerEmail: input.email,
+          }),
+        );
       } catch (error) {
         ctx.db.logger.error({
           err: error,

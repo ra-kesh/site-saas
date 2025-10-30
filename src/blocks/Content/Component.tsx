@@ -9,11 +9,13 @@ import { CMSLink } from '../../components/Link'
 export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
   const { columns } = props
 
-  const colsSpanClasses = {
-    full: '12',
-    half: '6',
-    oneThird: '4',
-    twoThirds: '8',
+  // Tailwind cannot detect dynamic class names in production.
+  // Use explicit static class strings so they are preserved by the compiler.
+  const colSpanLgMap: Record<NonNullable<ContentBlockProps['columns']>[number]['size'], string> = {
+    full: 'lg:col-span-12',
+    half: 'lg:col-span-6',
+    oneThird: 'lg:col-span-4',
+    twoThirds: 'lg:col-span-8',
   }
 
   return (
@@ -23,13 +25,11 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
         columns.map((col, index) => {
           const { enableLink, link, richText, size } = col
 
+          const baseCols = size === 'full' ? 'col-span-4' : 'col-span-4 md:col-span-2'
+          const lgCols = colSpanLgMap[size!]
+
           return (
-            <div
-              className={cn(`col-span-4 lg:col-span-${colsSpanClasses[size!]}`, {
-                'md:col-span-2': size !== 'full',
-              })}
-              key={index}
-            >
+            <div className={cn(baseCols, lgCols)} key={index}>
               {richText && <RichText data={richText} enableGutter={false} />}
 
               {enableLink && <CMSLink {...link} />}

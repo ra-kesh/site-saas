@@ -194,6 +194,11 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
     tenantSlug,
   })
 
+  // Precompute stable URLs to avoid relationship validation during seed
+  const homeUrl = generateTenantContentPath({ slug: 'home', tenantSlug })
+  const blogUrl = generateTenantContentPath({ slug: 'posts', tenantSlug })
+  const pricingUrl = generateTenantContentPath({ slug: 'pricing', tenantSlug })
+
   const homePage = await payload.create({
     collection: 'pages',
     context: {
@@ -234,37 +239,13 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
         tenant: tenantId,
         navItems: [
           {
-            link: {
-              type: 'reference',
-              newTab: false,
-              reference: {
-                relationTo: 'pages',
-                value: (homePage as { id: string }).id,
-              },
-              label: 'Home',
-            },
+            link: { type: 'custom', newTab: false, url: homeUrl, label: 'Home' },
           },
           {
-            link: {
-              type: 'reference',
-              newTab: false,
-              reference: {
-                relationTo: 'pages',
-                value: (postsPage as { id: string }).id,
-              },
-              label: 'Blog',
-            },
+            link: { type: 'custom', newTab: false, url: blogUrl, label: 'Blog' },
           },
           {
-            link: {
-              type: 'reference',
-              newTab: false,
-              reference: {
-                relationTo: 'pages',
-                value: (pricing as { id: string }).id,
-              },
-              label: 'Pricing',
-            },
+            link: { type: 'custom', newTab: false, url: pricingUrl, label: 'Pricing' },
           },
           {
             link: {
@@ -297,37 +278,13 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
         tenant: tenantId,
         navItems: [
           {
-            link: {
-              type: 'reference',
-              newTab: false,
-              reference: {
-                relationTo: 'pages',
-                value: (homePage as { id: string }).id,
-              },
-              label: 'Home',
-            },
+            link: { type: 'custom', newTab: false, url: homeUrl, label: 'Home' },
           },
           {
-            link: {
-              type: 'reference',
-              newTab: false,
-              reference: {
-                relationTo: 'pages',
-                value: (postsPage as { id: string }).id,
-              },
-              label: 'Blog',
-            },
+            link: { type: 'custom', newTab: false, url: blogUrl, label: 'Blog' },
           },
           {
-            link: {
-              type: 'reference',
-              newTab: false,
-              reference: {
-                relationTo: 'pages',
-                value: (pricing as { id: string }).id,
-              },
-              label: 'Pricing',
-            },
+            link: { type: 'custom', newTab: false, url: pricingUrl, label: 'Pricing' },
           },
           {
             link: {
