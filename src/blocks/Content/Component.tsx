@@ -11,7 +11,8 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
 
   // Tailwind cannot detect dynamic class names in production.
   // Use explicit static class strings so they are preserved by the compiler.
-  const colSpanLgMap: Record<NonNullable<ContentBlockProps['columns']>[number]['size'], string> = {
+  type ColumnSize = 'full' | 'half' | 'oneThird' | 'twoThirds'
+  const colSpanLgMap: Record<ColumnSize, string> = {
     full: 'lg:col-span-12',
     half: 'lg:col-span-6',
     oneThird: 'lg:col-span-4',
@@ -26,7 +27,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
           const { enableLink, link, richText, size } = col
 
           const baseCols = size === 'full' ? 'col-span-4' : 'col-span-4 md:col-span-2'
-          const lgCols = colSpanLgMap[size!]
+          const lgCols = colSpanLgMap[(size ?? 'oneThird') as ColumnSize]
 
           return (
             <div className={cn(baseCols, lgCols)} key={index}>
