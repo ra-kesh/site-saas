@@ -8,6 +8,12 @@ import { CallToActionBlock } from "@/blocks/CallToAction/Component";
 import { ContentBlock } from "@/blocks/Content/Component";
 import { FormBlock } from "@/blocks/Form/Component";
 import { MediaBlock } from "@/blocks/MediaBlock/Component";
+import { Section } from "@/components/Section";
+import { LogosBlock } from "@/blocks/Logos/Component";
+import { StatsBlock } from "@/blocks/Stats/Component";
+import { PricingBlock } from "@/blocks/Pricing/Component";
+import { TestimonialsBlock } from "@/blocks/Testimonials/Component";
+import { FAQBlock } from "@/blocks/FAQ/Component";
 
 const blockComponents = {
   archive: ArchiveBlock,
@@ -15,6 +21,11 @@ const blockComponents = {
   cta: CallToActionBlock,
   formBlock: FormBlock,
   mediaBlock: MediaBlock,
+  logos: LogosBlock,
+  stats: StatsBlock,
+  pricing: PricingBlock,
+  testimonials: TestimonialsBlock,
+  faq: FAQBlock,
 }
 
 export const RenderBlocks: React.FC<{
@@ -35,11 +46,18 @@ export const RenderBlocks: React.FC<{
             const Block = blockComponents[blockType];
 
             if (Block) {
+              const variant =
+                blockType === "cta"
+                  ? "muted"
+                  : blockType === "formBlock"
+                  ? "default"
+                  : "default";
+
               return (
-                <div className="my-16" key={index}>
+                <Section key={index} variant={variant} padding="lg" container={false}>
                   {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} disableInnerContainer tenant={tenant} />
-                </div>
+                </Section>
               );
             }
           }

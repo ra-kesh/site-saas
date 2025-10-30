@@ -8,6 +8,7 @@ import { home } from './home'
 import { postsListingPage } from './posts-page'
 import { createPostSeeds } from './posts'
 import { generateTenantContentPath } from '@/lib/utils'
+import { pricingPage } from './pricing-page'
 
 const categoryNames = ['Product updates', 'Customer spotlights']
 
@@ -162,7 +163,7 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
 
   const categoryIds = categories.map((category) => category.id)
 
-  await payload.create({
+  const postsPage = await payload.create({
     collection: 'pages',
     context: {
       disableRevalidate: true,
@@ -193,7 +194,7 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
     tenantSlug,
   })
 
-  await payload.create({
+  const homePage = await payload.create({
     collection: 'pages',
     context: {
       disableRevalidate: true,
@@ -209,6 +210,165 @@ export const seedTenant = async ({ payload, tenant, ownerEmail }: SeedTenantArgs
   })
 
   payload.logger.info('— Published home page')
+
+  const pricing = await payload.create({
+    collection: 'pages',
+    context: { disableRevalidate: true },
+    data: pricingPage({ tenantId, tenantName }),
+  })
+  payload.logger.info('— Published pricing page')
+
+  // Seed Header / Footer if missing
+  const existingHeader = await payload.find({
+    collection: 'headers',
+    limit: 1,
+    pagination: false,
+    where: { tenant: { equals: tenantId } },
+  })
+
+  if (existingHeader.totalDocs === 0) {
+    await payload.create({
+      collection: 'headers',
+      context: { disableRevalidate: true },
+      data: {
+        tenant: tenantId,
+        navItems: [
+          {
+            link: {
+              type: 'reference',
+              newTab: false,
+              reference: {
+                relationTo: 'pages',
+                value: (homePage as { id: string }).id,
+              },
+              label: 'Home',
+            },
+          },
+          {
+            link: {
+              type: 'reference',
+              newTab: false,
+              reference: {
+                relationTo: 'pages',
+                value: (postsPage as { id: string }).id,
+              },
+              label: 'Blog',
+            },
+          },
+          {
+            link: {
+              type: 'reference',
+              newTab: false,
+              reference: {
+                relationTo: 'pages',
+                value: (pricing as { id: string }).id,
+              },
+              label: 'Pricing',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
+              newTab: false,
+              url: contactUrl,
+              label: 'Contact',
+            },
+          },
+        ],
+      },
+    })
+    payload.logger.info('— Seeded header navigation')
+  } else {
+    payload.logger.info('— Header exists, skipping')
+  }
+
+  const existingFooter = await payload.find({
+    collection: 'footers',
+    limit: 1,
+    pagination: false,
+    where: { tenant: { equals: tenantId } },
+  })
+
+  if (existingFooter.totalDocs === 0) {
+    await payload.create({
+      collection: 'footers',
+      context: { disableRevalidate: true },
+      data: {
+        tenant: tenantId,
+        navItems: [
+          {
+            link: {
+              type: 'reference',
+              newTab: false,
+              reference: {
+                relationTo: 'pages',
+                value: (homePage as { id: string }).id,
+              },
+              label: 'Home',
+            },
+          },
+          {
+            link: {
+              type: 'reference',
+              newTab: false,
+              reference: {
+                relationTo: 'pages',
+                value: (postsPage as { id: string }).id,
+              },
+              label: 'Blog',
+            },
+          },
+          {
+            link: {
+              type: 'reference',
+              newTab: false,
+              reference: {
+                relationTo: 'pages',
+                value: (pricing as { id: string }).id,
+              },
+              label: 'Pricing',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
+              newTab: false,
+              url: contactUrl,
+              label: 'Contact',
+            },
+          },
+        ],
+      },
+    })
+    payload.logger.info('— Seeded footer navigation')
+  } else {
+    payload.logger.info('— Footer exists, skipping')
+  }
+
+  // Seed Settings if missing
+  const existingSettings = await payload.find({
+    collection: 'settings' as any,
+    limit: 1,
+    pagination: false,
+    where: { tenant: { equals: tenantId } },
+  })
+  if (existingSettings.totalDocs === 0) {
+    await payload.create({
+      collection: 'settings' as any,
+      context: { disableRevalidate: true },
+      data: {
+        tenant: tenantId,
+        brand: {
+          primary: '#111827',
+          accent: '#3B82F6',
+        },
+        typography: 'system',
+      } as any,
+    })
+    payload.logger.info('— Seeded tenant settings')
+  } else {
+    payload.logger.info('— Settings exist, skipping')
+  }
   payload.logger.info(`Seeded database successfully for tenant "${tenantSlug}".`)
 }
 

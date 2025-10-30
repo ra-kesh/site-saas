@@ -16,6 +16,7 @@ interface TenantContextProps { tenantId?: string }
 export const Footer = async (props?: TenantContextProps) => {
   const payload = await getPayload({ config: configPromise });
   let navItems: any[] = [];
+  let hasFooterDoc = false;
 
   if (props?.tenantId) {
     const footerResult = await payload.find({
@@ -25,8 +26,11 @@ export const Footer = async (props?: TenantContextProps) => {
       where: { tenant: { equals: props.tenantId } },
     });
     const footerDoc = (footerResult.docs?.[0] as any) ?? null;
+    hasFooterDoc = Boolean(footerDoc);
     navItems = Array.isArray(footerDoc?.navItems) ? footerDoc.navItems : [];
   }
+
+  if (!hasFooterDoc) return null;
 
   return (
     <footer className="border-t font-medium bg-white">

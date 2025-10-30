@@ -15,6 +15,7 @@ import { Tenants } from "./collections/Tenants";
 import { Users } from "./collections/Users";
 import { Headers } from "./collections/Headers";
 import { Footers } from "./collections/Footers";
+import { Settings } from "./collections/Settings";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { seoPlugin } from "@payloadcms/plugin-seo";
@@ -88,7 +89,7 @@ export default buildConfig({
     theme: "light",
     suppressHydrationWarning: true,
   },
-  collections: [Users, Media, Tenants, Headers, Footers, Pages, Posts, Categories],
+  collections: [Users, Media, Tenants, Headers, Footers, Settings, Pages, Posts, Categories],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   serverURL:
@@ -127,13 +128,15 @@ export default buildConfig({
         media: {},
         headers: {},
         footers: {},
+        // @ts-ignore: additional collection included
+        settings: {},
         pages: {},
         posts: {},
         categories: {},
         redirects: {},
         forms: {},
         "form-submissions": {},
-      },
+      } as any,
       tenantField: {
         admin: {
           disableListColumn: false,

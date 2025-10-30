@@ -107,6 +107,33 @@ export const home = ({
         ],
       },
       {
+        // @ts-ignore added via runtime blocks; types will be regenerated
+        blockType: 'testimonials',
+        title: 'What teams say',
+        items: [
+          {
+            authorName: tenantName,
+            authorTitle: 'Product Lead',
+            quote: createRichText([
+              createParagraphNode([
+                createTextNode('“Simple to launch, easy to scale. The seeded tenant site looked great out of the box.”'),
+              ]),
+            ]),
+          },
+        ],
+      },
+      {
+        // @ts-ignore added via runtime blocks; types will be regenerated
+        blockType: 'stats',
+        title: 'Fast to launch, built to scale',
+        items: [
+          { value: '10m+', label: 'Requests served' },
+          { value: '99.9%', label: 'Uptime' },
+          { value: '5×', label: 'Faster iteration' },
+          { value: '30d', label: 'Average time‑to‑launch' },
+        ],
+      },
+      {
         blockType: 'cta',
         richText: createRichText([
           createHeadingNode('h2', [createTextNode('Ready to launch your next tenant?')]),
@@ -125,6 +152,33 @@ export const home = ({
               type: 'custom',
               url: contactUrl,
             },
+          },
+        ],
+      },
+      {
+        // @ts-ignore added via runtime blocks; types will be regenerated
+        blockType: 'faq',
+        title: 'Frequently asked questions',
+        items: [
+          {
+            question: 'How do tenants stay isolated?',
+            answer: createRichText([
+              createParagraphNode([
+                createTextNode(
+                  'Every document carries a tenant reference. Access control and queries enforce isolation while sharing infrastructure.',
+                ),
+              ]),
+            ]),
+          },
+          {
+            question: 'Can we customize blocks per tenant?',
+            answer: createRichText([
+              createParagraphNode([
+                createTextNode(
+                  'Yes. Blocks are React components connected to Payload schemas, so you can extend visuals and behavior per tenant.',
+                ),
+              ]),
+            ]),
           },
         ],
       },
