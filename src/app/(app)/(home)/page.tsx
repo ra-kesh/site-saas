@@ -25,6 +25,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { useTRPC } from "@/trpc/client";
 import Link from "next/link";
+import Image from "next/image";
 import { Poppins } from "next/font/google";
 import { cn } from "@/utilities/ui";
 
@@ -491,10 +492,12 @@ export default function Home() {
                   <div className="ml-auto w-44 flex-none space-y-8 pt-32 sm:ml-0 sm:pt-80 lg:order-last lg:pt-36 xl:order-none xl:pt-80">
                     <Card className="relative overflow-hidden border-0 shadow-lg py-0 rounded-md">
                       <CardContent className="p-0">
-                        <img
+                        <Image
                           alt=""
                           src="https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&h=528&q=80"
-                          className="aspect-2/3 w-full object-cover"
+                          width={396}
+                          height={528}
+                          className="w-full h-auto object-cover"
                         />
                       </CardContent>
                     </Card>
@@ -502,19 +505,23 @@ export default function Home() {
                   <div className="mr-auto w-44 flex-none space-y-8 sm:mr-0 sm:pt-52 lg:pt-36">
                     <Card className="relative overflow-hidden border-0 shadow-lg py-0 rounded-md">
                       <CardContent className="p-0">
-                        <img
+                        <Image
                           alt=""
                           src="https://images.unsplash.com/photo-1485217988980-11786ced9454?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&h=528&q=80"
-                          className="aspect-2/3 w-full object-cover"
+                          width={396}
+                          height={528}
+                          className="w-full h-auto object-cover"
                         />
                       </CardContent>
                     </Card>
                     <Card className="relative overflow-hidden border-0 shadow-lg py-0 rounded-md">
                       <CardContent className="p-0">
-                        <img
+                        <Image
                           alt=""
                           src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&crop=focalpoint&fp-x=.4&w=396&h=528&q=80"
-                          className="aspect-2/3 w-full object-cover"
+                          width={396}
+                          height={528}
+                          className="w-full h-auto object-cover"
                         />
                       </CardContent>
                     </Card>
@@ -522,19 +529,23 @@ export default function Home() {
                   <div className="w-44 flex-none space-y-8 pt-32 sm:pt-0">
                     <Card className="relative overflow-hidden border-0 shadow-lg py-0 rounded-md">
                       <CardContent className="p-0">
-                        <img
+                        <Image
                           alt=""
                           src="https://images.unsplash.com/photo-1670272504528-790c24957dda?ixlib=rb-4.0.3&ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&crop=left&w=400&h=528&q=80"
-                          className="aspect-2/3 w-full object-cover"
+                          width={400}
+                          height={528}
+                          className="w-full h-auto object-cover"
                         />
                       </CardContent>
                     </Card>
                     <Card className="relative overflow-hidden border-0 shadow-lg py-0 rounded-md">
                       <CardContent className="p-0">
-                        <img
+                        <Image
                           alt=""
                           src="https://images.unsplash.com/photo-1670272505284-8faba1c31f7d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&h=528&q=80"
-                          className="aspect-2/3 w-full object-cover"
+                          width={396}
+                          height={528}
+                          className="w-full h-auto object-cover"
                         />
                       </CardContent>
                     </Card>
