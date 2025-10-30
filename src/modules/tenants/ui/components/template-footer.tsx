@@ -5,7 +5,7 @@ import { CMSLink } from "@/components/Link";
 import { Logo } from "@/components/Logo/Logo";
 
 export async function TenantFooter() {
-  const footer = await getCachedGlobal("footer", 1)();
+  const footer: any = await getCachedGlobal("footer", 1)();
   const navItems = Array.isArray(footer?.navItems) ? footer.navItems : [];
 
   return (
