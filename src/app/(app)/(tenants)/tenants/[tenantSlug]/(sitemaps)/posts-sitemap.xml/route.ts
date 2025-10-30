@@ -1,13 +1,10 @@
 import { unstable_cache } from "next/cache";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
+import type { NextRequest } from "next/server";
 
 import { generateTenantContentPath } from "@/lib/utils";
 import { getServerSideURL } from "@/utilities/getURL";
-
-type Params = {
-  params: { tenantSlug: string };
-};
 
 const getPostsSitemap = ({ tenantSlug }: { tenantSlug: string }) =>
   unstable_cache(
@@ -73,9 +70,10 @@ const toXML = (nodes: { loc: string; lastmod: string }[]) => {
   return `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n${urls}\n</urlset>`;
 };
 
-export async function GET(_: Request, { params }: Params) {
-  const tenantSlug = decodeURIComponent(params.tenantSlug);
-  const sitemap = await getPostsSitemap({ tenantSlug });
+export async function GET(_: NextRequest, { params }: { params: Promise<{ tenantSlug: string }> }) {
+  const { tenantSlug } = await params;
+  const decoded = decodeURIComponent(tenantSlug);
+  const sitemap = await getPostsSitemap({ tenantSlug: decoded });
   const xml = toXML(sitemap);
   return new Response(xml, {
     headers: { "Content-Type": "application/xml; charset=utf-8" },
