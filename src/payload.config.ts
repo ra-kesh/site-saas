@@ -19,6 +19,7 @@ import { Settings } from "./collections/Settings";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { seoPlugin } from "@payloadcms/plugin-seo";
+import { searchPlugin } from "@payloadcms/plugin-search";
 import type { GenerateTitle, GenerateURL } from "@payloadcms/plugin-seo/types";
 import { isSuperAdmin } from "./lib/access";
 import { revalidateRedirects } from "./hooks/revalidateRedirects";
@@ -121,6 +122,9 @@ export default buildConfig({
     seoPlugin({
       generateTitle,
       generateURL,
+    }),
+    searchPlugin({
+      collections: ["pages", "posts"],
     }),
     multiTenantPlugin({
       collections: {

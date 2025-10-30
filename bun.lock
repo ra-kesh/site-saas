@@ -12,6 +12,7 @@
         "@payloadcms/plugin-form-builder": "^3.61.1",
         "@payloadcms/plugin-multi-tenant": "^3.61.1",
         "@payloadcms/plugin-redirects": "^3.61.1",
+        "@payloadcms/plugin-search": "^3.61.1",
         "@payloadcms/plugin-seo": "^3.61.1",
         "@payloadcms/richtext-lexical": "^3.61.1",
         "@payloadcms/ui": "^3.61.1",
@@ -453,6 +454,8 @@
     "@payloadcms/plugin-multi-tenant": ["@payloadcms/plugin-multi-tenant@3.61.1", "", { "peerDependencies": { "@payloadcms/ui": "3.61.1", "next": "^15.2.3", "payload": "3.61.1" } }, "sha512-IQ+MXXVir5VAtcqZTXzB+mwr3/n+v8qAU7VAi66Xn6o8MJhG+1Dy2DXPu+Avo60okEAA7bcvhcwtVmzWE+s5hA=="],
 
     "@payloadcms/plugin-redirects": ["@payloadcms/plugin-redirects@3.61.1", "", { "peerDependencies": { "payload": "3.61.1" } }, "sha512-3pquvAk9g4NoROec6c9vXQkd6sIV/Gim6uBmAk5OhXF5ce4ISsj+ZvR0TALN2EfEtuiyq1wJ2Fh1GdS/bMVNFQ=="],
+
+    "@payloadcms/plugin-search": ["@payloadcms/plugin-search@3.61.1", "", { "dependencies": { "@payloadcms/next": "3.61.1", "@payloadcms/ui": "3.61.1" }, "peerDependencies": { "payload": "3.61.1", "react": "^19.0.0 || ^19.0.0-rc-65a56d0e-20241020", "react-dom": "^19.0.0 || ^19.0.0-rc-65a56d0e-20241020" } }, "sha512-vbfwu+ZdKzwWuTnicvG09Us8MzsQvajLyiEuo9CLfhjixUc1sdk5QX2TU2QPHCVh8bAM5XpESqwuMTqSX6vIOw=="],
 
     "@payloadcms/plugin-seo": ["@payloadcms/plugin-seo@3.61.1", "", { "dependencies": { "@payloadcms/translations": "3.61.1", "@payloadcms/ui": "3.61.1" }, "peerDependencies": { "payload": "3.61.1", "react": "^19.0.0 || ^19.0.0-rc-65a56d0e-20241020", "react-dom": "^19.0.0 || ^19.0.0-rc-65a56d0e-20241020" } }, "sha512-GCqVn1j8C7z5MxTLgB+ZY1OgJu5Eo4EtmKbP1yzOZLCprGncxAL/EmDhK6aAipoCCh02diRBAGWQ1SzNPa4nxQ=="],
 
