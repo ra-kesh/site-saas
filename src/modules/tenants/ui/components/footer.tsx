@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { CMSLink } from "@/components/Link";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
+import { unstable_cache } from "next/cache";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -19,13 +20,20 @@ export const Footer = async (props?: TenantContextProps) => {
   let hasFooterDoc = false;
 
   if (props?.tenantId) {
-    const footerResult = await payload.find({
-      collection: "footers",
-      limit: 1,
-      pagination: false,
-      where: { tenant: { equals: props.tenantId } },
-    });
-    const footerDoc = (footerResult.docs?.[0] as any) ?? null;
+    const tenantId = String(props.tenantId);
+    const footerDoc = await unstable_cache(
+      async () => {
+        const res = await payload.find({
+          collection: "footers",
+          limit: 1,
+          pagination: false,
+          where: { tenant: { equals: props.tenantId } },
+        });
+        return (res.docs?.[0] as any) ?? null;
+      },
+      ["tenant-footer", tenantId],
+      { tags: ["footers"] }
+    )();
     hasFooterDoc = Boolean(footerDoc);
     navItems = Array.isArray(footerDoc?.navItems) ? footerDoc.navItems : [];
   }
@@ -33,7 +41,7 @@ export const Footer = async (props?: TenantContextProps) => {
   if (!hasFooterDoc) return null;
 
   return (
-    <footer className="border-t font-medium bg-white">
+    <footer className="border-t font-medium bg-white" aria-label="Footer">
       <div className="max-w-(--breakpoint-xl) mx-auto flex items-center justify-between h-full gap-4 px-4 py-6 lg:px-12">
         <div className="flex items-center gap-2">
           <p>Powered by</p>

@@ -9,6 +9,7 @@ import { getMediaUrl } from "@/utilities/getMediaUrl";
 import { CMSLink } from "@/components/Link";
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
+import { unstable_cache } from "next/cache";
 
 interface Props {
   tenant: Tenant;
@@ -40,28 +41,40 @@ export const Navbar = async ({ tenant }: Props) => {
   const tenantUrl = generateTenantURL(tenant.slug);
   const imageUrl = getImageUrl(tenant.image);
   const payload = await getPayload({ config: configPromise });
-  const settingsResult = await payload.find({
-    collection: "settings" as any,
-    limit: 1,
-    pagination: false,
-    where: { tenant: { equals: tenant.id } },
-  });
-  const settings = (settingsResult.docs?.[0] as any) ?? null;
+  const settings = await unstable_cache(
+    async () => {
+      const res = await payload.find({
+        collection: "settings" as any,
+        limit: 1,
+        pagination: false,
+        where: { tenant: { equals: tenant.id } },
+      });
+      return (res.docs?.[0] as any) ?? null;
+    },
+    ["tenant-settings", String(tenant.id)],
+    { tags: ["settings", `tenant:${tenant.slug}`] }
+  )();
   const logoFromSettings = settings?.brand?.logoLight ?? null;
   const logoUrl = getImageUrl(logoFromSettings || tenant.image);
-  const headerResult = await payload.find({
-    collection: "headers",
-    limit: 1,
-    pagination: false,
-    where: { tenant: { equals: tenant.id } },
-  });
-  const headerDoc = (headerResult.docs?.[0] as any) ?? null;
+  const headerDoc = await unstable_cache(
+    async () => {
+      const res = await payload.find({
+        collection: "headers",
+        limit: 1,
+        pagination: false,
+        where: { tenant: { equals: tenant.id } },
+      });
+      return (res.docs?.[0] as any) ?? null;
+    },
+    ["tenant-header", String(tenant.id)],
+    { tags: ["headers", `tenant:${tenant.slug}`] }
+  )();
   const navItems = Array.isArray(headerDoc?.navItems) ? headerDoc.navItems : [];
 
   if (!headerDoc) return null;
 
   return (
-    <nav className="h-20 border-b font-medium bg-white">
+    <nav className="h-20 border-b font-medium bg-white" aria-label="Primary">
       <div className="max-w-(--breakpoint-xl) mx-auto flex justify-between items-center h-full px-4 lg:px-12">
         <Link href={tenantUrl} className="flex items-center gap-2">
           {logoUrl && (
