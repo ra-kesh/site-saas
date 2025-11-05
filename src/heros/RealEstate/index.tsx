@@ -16,7 +16,10 @@ export const RealEstateHero: React.FC<Page["hero"]> = ({
   richText,
 }) => {
   const brandLink = Array.isArray(links)
-    ? links.find(({ link }) => link?.appearance === inlineAppearance)
+    ? links.find(
+        ({ link }) =>
+          (link?.appearance as string | null | undefined) === inlineAppearance,
+      )
     : undefined;
   const brandLabel =
     typeof brandLink?.link?.label === "string"
@@ -24,7 +27,10 @@ export const RealEstateHero: React.FC<Page["hero"]> = ({
       : undefined;
 
   const ctaLinks = Array.isArray(links)
-    ? links.filter(({ link }) => link?.appearance !== inlineAppearance)
+    ? links.filter(
+        ({ link }) =>
+          (link?.appearance as string | null | undefined) !== inlineAppearance,
+      )
     : [];
 
   const hasCtas = ctaLinks.length > 0;
