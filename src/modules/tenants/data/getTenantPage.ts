@@ -44,6 +44,7 @@ const fetchTenantPage = async ({
   const pageResult = await payload.find({
     collection: "pages",
     draft,
+    depth: 2,
     limit: 1,
     overrideAccess: draft,
     pagination: false,

@@ -1,4 +1,4 @@
-// storage-adapter-import-placeholder
+import { s3Storage } from "@payloadcms/storage-s3";
 import { mongooseAdapter } from "@payloadcms/db-mongodb";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { formBuilderPlugin } from "@payloadcms/plugin-form-builder";
@@ -78,6 +78,16 @@ const generateURL: GenerateURL<Page | Post> = ({ doc }) => {
   return `${baseURL}${tenantPrefix}${path}`;
 };
 
+const s3StorageEnabled =
+  Boolean(process.env.AWS_S3_BUCKET_NAME) &&
+  Boolean(process.env.AWS_ENDPOINT_URL_S3) &&
+  Boolean(process.env.AWS_ACCESS_KEY_ID) &&
+  Boolean(process.env.AWS_SECRET_ACCESS_KEY);
+
+const trimmedS3Endpoint = process.env.AWS_ENDPOINT_URL_S3
+  ? process.env.AWS_ENDPOINT_URL_S3.replace(/\/+$/, "")
+  : undefined;
+
 export default buildConfig({
   admin: {
     components: {
@@ -151,6 +161,24 @@ export default buildConfig({
       },
       userHasAccessToAllTenants: (user) => isSuperAdmin(user),
     }),
-    // storage-adapter-placeholder
+    s3Storage({
+      acl: "public-read",
+      bucket: process.env.AWS_S3_BUCKET_NAME || "",
+      collections: {
+        media: {
+          prefix: "media",
+        },
+      },
+      config: {
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+        },
+        endpoint: trimmedS3Endpoint,
+        forcePathStyle: true,
+        region: process.env.AWS_REGION || "us-east-1",
+      },
+      enabled: s3StorageEnabled,
+    }),
   ],
 });

@@ -1,11 +1,6 @@
-import path from "path";
-import { fileURLToPath } from "url";
 import type { CollectionConfig } from "payload";
 
 import { defaultLexical } from "@/fields/defaultLexical";
-
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
 
 export const Media: CollectionConfig = {
   slug: "media",
@@ -25,7 +20,6 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    staticDir: path.resolve(dirname, "../../public/media"),
     adminThumbnail: "thumbnail",
     focalPoint: true,
     imageSizes: [

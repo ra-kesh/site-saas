@@ -5,7 +5,7 @@ import { headers as getHeaders } from "next/headers";
 import { seedTenant } from "@/endpoints/seed";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 
-import { generateAuthCookie } from "../utils";
+import { clearAuthCookie, generateAuthCookie } from "../utils";
 import { loginSchema, registerSchema } from "../schemas";
 
 export const authRouter = createTRPCRouter({
@@ -91,29 +91,30 @@ export const authRouter = createTRPCRouter({
         },
       });
 
-      try {
-        await withMongoRetry(() =>
-          seedTenant({
-            payload: ctx.db,
-            tenant: {
-              id: tenant.id,
-              slug: tenant.slug,
-              name: tenant.name,
-            },
-            ownerEmail: input.email,
-          }),
-        );
-      } catch (error) {
-        ctx.db.logger.error({
-          err: error,
-          message: `Failed to seed starter content for tenant "${tenant.slug}"`,
-        });
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to provision starter content for your tenant. Please try again.",
-        });
-      }
+      // Temporarily disable automatic tenant seeding; users will trigger it manually from the generate flow.
+      // try {
+      //   await withMongoRetry(() =>
+      //     seedTenant({
+      //       payload: ctx.db,
+      //       tenant: {
+      //         id: tenant.id,
+      //         slug: tenant.slug,
+      //         name: tenant.name,
+      //       },
+      //       ownerEmail: input.email,
+      //     }),
+      //   );
+      // } catch (error) {
+      //   ctx.db.logger.error({
+      //     err: error,
+      //     message: `Failed to seed starter content for tenant "${tenant.slug}"`,
+      //   });
+      //
+      //   throw new TRPCError({
+      //     code: "INTERNAL_SERVER_ERROR",
+      //     message: "Failed to provision starter content for your tenant. Please try again.",
+      //   });
+      // }
 
       const data = await ctx.db.login({
         collection: "users",
@@ -157,5 +158,13 @@ export const authRouter = createTRPCRouter({
     });
 
     return data;
+  }),
+  logout: baseProcedure.mutation(async ({ ctx }) => {
+    // Clearing the auth cookie logs the user out; payload will expire the session token server-side.
+    await clearAuthCookie({
+      prefix: ctx.db.config.cookiePrefix,
+    });
+
+    return { success: true };
   }),
 });
